@@ -1,0 +1,87 @@
+@use "../abstracts/index" as *;
+
+.popup-property {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background-color: var(--White);
+    border-radius: 16px;
+    font-family: $font-main;
+    .img-style {
+        border-radius: 4px;
+        overflow: hidden;
+        img {
+            height: 120px;
+            width: 120px;
+            object-fit: cover;
+        }
+    }
+    .info {
+        gap: 24px;
+        flex-wrap: wrap;
+        li {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            line-height: 23px;
+            font-weight: 600;
+            color: var(--Text-primary);
+            gap: 8px;
+        }
+        i {
+            font-size: 20px;
+            color: var(--Text-secondary);
+        }
+    }
+    @include res(md) {
+        padding: 10px;
+        gap: 10px;
+        .info {
+            gap: 7px;
+        }
+        .img-style {
+            img {
+                height: 80px;
+                width: 80px;
+            }
+        }
+    }
+}
+
+.modal {
+    z-index: 9999;
+    .title-box {
+        margin-bottom: 40px;
+        @include flex(center, space-between);
+        .close-modal {
+            font-size: 24px;
+            cursor: pointer;
+            @include transition3();
+            &:hover {
+                transform: rotate(90deg);
+                color: var(--Primary);
+            }
+        }
+    }
+    .modal-header {
+        margin-bottom: 6px;
+    }
+    .modal-content {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    @include res(lg, min) {
+        &.modal-filter {
+            --bs-modal-width: 615px;
+        }
+    }
+}
+
+.offcanvas-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    opacity: 0.7;
+    backdrop-filter: blur(10px);
+    @include transition3();
+    z-index: 99999;
+}

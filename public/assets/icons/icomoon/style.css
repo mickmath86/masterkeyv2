@@ -1,0 +1,223 @@
+@font-face {
+  font-family: 'icomoon';
+  src:  url('fonts/icomoon.eot?n05s7k');
+  src:  url('fonts/icomoon.eot?n05s7k#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?n05s7k') format('truetype'),
+    url('fonts/icomoon.woff?n05s7k') format('woff'),
+    url('fonts/icomoon.svg?n05s7k#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-Target:before {
+  content: "\e93e";
+}
+.icon-Crown:before {
+  content: "\e93f";
+}
+.icon-ChatCircleDots:before {
+  content: "\e93d";
+}
+.icon-DownloadSimple:before {
+  content: "\e93c";
+}
+.icon-PlayCircle:before {
+  content: "\e93a";
+}
+.icon-Image:before {
+  content: "\e93b";
+}
+.icon-SecurityCamera:before {
+  content: "\e928";
+}
+.icon-Snowflake:before {
+  content: "\e929";
+}
+.icon-SolarPanel:before {
+  content: "\e92a";
+}
+.icon-Television:before {
+  content: "\e92b";
+}
+.icon-Thermometer:before {
+  content: "\e92c";
+}
+.icon-WifiHigh:before {
+  content: "\e92d";
+}
+.icon-CloudWarning:before {
+  content: "\e92e";
+}
+.icon-Fan:before {
+  content: "\e92f";
+}
+.icon-FileDoc:before {
+  content: "\e930";
+}
+.icon-FilePdf:before {
+  content: "\e931";
+}
+.icon-FingerprintSimple:before {
+  content: "\e932";
+}
+.icon-Crop:before {
+  content: "\e933";
+}
+.icon-HouseSimple:before {
+  content: "\e934";
+}
+.icon-ShareNetwork:before {
+  content: "\e935";
+}
+.icon-Shower:before {
+  content: "\e936";
+}
+.icon-SlidersHorizontal:before {
+  content: "\e937";
+}
+.icon-Warehouse:before {
+  content: "\e938";
+}
+.icon-ArrowsLeftRight:before {
+  content: "\e939";
+}
+.icon-Rows:before {
+  content: "\e926";
+}
+.icon-SquaresFour:before {
+  content: "\e927";
+}
+.icon-Heart:before {
+  content: "\e925";
+}
+.icon-Alarm:before {
+  content: "\e922";
+}
+.icon-MapPin:before {
+  content: "\e923";
+}
+.icon-HouseLine:before {
+  content: "\e921";
+}
+.icon-eye:before {
+  content: "\e91d";
+}
+.icon-eye-slash:before {
+  content: "\e920";
+  color: #5c6368;
+}
+.icon-Fire:before {
+  content: "\e91e";
+}
+.icon-CheckCircle:before {
+  content: "\e91f";
+}
+.icon-SketchLogo:before {
+  content: "\e91a";
+}
+.icon-ClockCountdown:before {
+  content: "\e91b";
+}
+.icon-Lifebuoy:before {
+  content: "\e91c";
+}
+.icon-Certificate:before {
+  content: "\e917";
+}
+.icon-ChartDonut:before {
+  content: "\e918";
+}
+.icon-BuildingOffice:before {
+  content: "\e919";
+}
+.icon-Bed:before {
+  content: "\e914";
+}
+.icon-Ruler:before {
+  content: "\e915";
+}
+.icon-Bathtub:before {
+  content: "\e916";
+}
+.icon-Clock:before {
+  content: "\e911";
+}
+.icon-EnvelopeSimple:before {
+  content: "\e912";
+}
+.icon-PhoneCall:before {
+  content: "\e913";
+}
+.icon-CaretLeft:before {
+  content: "\e910";
+}
+.icon-Faders:before {
+  content: "\e90f";
+}
+.icon-CalendarBlank:before {
+  content: "\e90b";
+}
+.icon-favorite_major:before {
+  content: "\e90c";
+}
+.icon-quote-line:before {
+  content: "\e90d";
+}
+.icon-ArrowFatUp:before {
+  content: "\e900";
+}
+.icon-ArrowUpRight:before {
+  content: "\e901";
+}
+.icon-CaretDown:before {
+  content: "\e902";
+}
+.icon-CaretRight:before {
+  content: "\e903";
+}
+.icon-FacebookLogo:before {
+  content: "\e904";
+}
+.icon-InstagramLogo:before {
+  content: "\e905";
+}
+.icon-MagnifyingGlass:before {
+  content: "\e906";
+}
+.icon-PaperPlaneTilt:before {
+  content: "\e907";
+}
+.icon-TiktokLogo:before {
+  content: "\e908";
+}
+.icon-XLogo:before {
+  content: "\e909";
+}
+.icon-YoutubeLogo:before {
+  content: "\e90a";
+}
+.icon-check:before {
+  content: "\e90e";
+}
+.icon-times-solid:before {
+  content: "\e946";
+}
+.icon-trash-alt-solid:before {
+  content: "\e924";
+}
