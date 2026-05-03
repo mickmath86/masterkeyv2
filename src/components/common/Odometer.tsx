@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type Odometer from "odometer";
-import "odometer/themes/odometer-theme-default.css"
+import "@/styles/odometer.css";
 
 type Props = {
     value: number;
