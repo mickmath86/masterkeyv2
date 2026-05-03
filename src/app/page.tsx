@@ -9,6 +9,13 @@ import Testimonials from "@/components/homes/homepage-1/Testimonials";
 import LatestNews from "@/components/homes/LatestNews";
 import Layout from "@/components/layouts/Layout-defaul";
 
+// Force dynamic rendering so async server components (Location, etc.)
+// always fetch live data from Repliers on each request instead of
+// being baked into a static snapshot at build time.
+// The Location component itself uses next: { revalidate: 3600 } on its
+// fetch calls so responses are still cached at the CDN level.
+export const dynamic = "force-dynamic";
+
 export default function Home() {
     return (
         <Layout>
