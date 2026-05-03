@@ -58,7 +58,7 @@ export default function PropertyDetails4({ property }: { property: Property }) {
                     </div>
 
                     <div className="properties-video v2">
-                        <Video property={property} />
+                        <Video />
                     </div>
 
                     <div className="properties-calculator tf-spacing-8">

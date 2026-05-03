@@ -1,27 +1,34 @@
-import React from "react";
+"use client";
+import React, { useState } from "react";
+import type { ListingDetail } from "@/types/listing";
 
-export default function Description() {
+const TRUNCATE_LENGTH = 400;
+
+type Props = {
+    listing?: ListingDetail;
+};
+
+export default function Description({ listing }: Props) {
+    const [expanded, setExpanded] = useState(false);
+    const text = listing?.description || "";
+    const isLong = text.length > TRUNCATE_LENGTH;
+    const displayText = isLong && !expanded ? text.slice(0, TRUNCATE_LENGTH) + "…" : text;
+
+    if (!text) return null;
+
     return (
         <div>
             <h5 className="properties-title mb_20">Description</h5>
-            <p className="mb_8 text-body-2">
-                Casa Lomas de Machalí offers a perfect blend of comfort,
-                privacy, and nature. Nestled in one of Machalí’s most secure and
-                peaceful residential areas, this beautiful property features
-                modern architecture, open interiors, and large windows that fill
-                the home with natural light.
-            </p>
-            <p className="mb_20 text-body-2">
-                Its tranquil surroundings and convenient access to local
-                amenities make it ideal for families or anyone seeking a serene
-                lifestyle just minutes from Rancagua.
-            </p>
-            <a
-                href="#"
-                className="hover-underline-link text_primary-color text-button"
-            >
-                View More
-            </a>
+            <p className="mb_8 text-body-2">{displayText}</p>
+            {isLong && (
+                <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="hover-underline-link text_primary-color text-button"
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+                >
+                    {expanded ? "Show Less" : "View More"}
+                </button>
+            )}
         </div>
     );
 }

@@ -189,7 +189,7 @@ export default function PropertyDetails3({ property }: { property: Property }) {
 
                             <div id="video" className="tf-spacing-9 section">
                                 <div className="properties-video properties-2">
-                                    <Video property={property} />
+                                    <Video />
                                 </div>
                             </div>
 

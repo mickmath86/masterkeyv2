@@ -1,17 +1,17 @@
 import React from "react";
-type Property = {
-    id: number;
-    address: string;
-    title: string;
-    beds?: number;
-    baths?: number;
-    sqft?: number;
-    categories: string;
-    type: string;
-    price: number;
+import type { ListingDetail } from "@/types/listing";
+
+type Props = {
+    listing: ListingDetail;
 };
 
-export default function PropertiesTitle({ property }: { property: Property }) {
+export default function PropertiesTitle({ listing }: Props) {
+    const formattedPrice = listing.price.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+    });
+
     return (
         <div>
             <div className="d-flex align-items-center justify-content-between flex-wrap gap_12">
@@ -19,26 +19,26 @@ export default function PropertiesTitle({ property }: { property: Property }) {
                     <div className="wrap-tag d-flex gap_8 mb_12">
                         <div
                             className={`tag ${
-                                property.type === "Sale"
+                                listing.type === "Sale"
                                     ? "sale"
-                                    : property.type === "Rent"
+                                    : listing.type === "Rent"
                                     ? "rent"
-                                    : property.type
-                            }  text-button-small fw-6 text_primary-color`}
+                                    : listing.type
+                            } text-button-small fw-6 text_primary-color`}
                         >
-                            For {property.type}
+                            For {listing.type}
                         </div>
                         <div className="tag categoreis text-button-small fw-6 text_primary-color">
-                            {property.categories}
+                            {listing.categories}
                         </div>
                     </div>
-                    <h4>{property.title}</h4>
+                    <h4>{listing.title}</h4>
                 </div>
-                <h4 className="price">
-                    {property.price}
-                    <span className="text_secondary-color text-body-1">
-                        {property.type === "Sale" ? "/Sqft" : "/month"}
-                    </span>
+                <h4 className="price" suppressHydrationWarning>
+                    {formattedPrice}
+                    {listing.type !== "Sale" && (
+                        <span className="text_secondary-color text-body-1">/month</span>
+                    )}
                 </h4>
             </div>
             <div className="wrap-info d-flex justify-content-between align-items-end">
@@ -47,33 +47,33 @@ export default function PropertiesTitle({ property }: { property: Property }) {
                     <ul className="info d-flex">
                         <li className="d-flex align-items-center gap_8 h6 text_primary-color fw-6">
                             <i className="icon-Bed"></i>
-                            {property.beds}
-                            Beds
+                            {listing.beds} Beds
                         </li>
                         <li className="d-flex align-items-center gap_8 h6 text_primary-color fw-6">
-                            <i className="icon-Bathstub"></i>
-                            {property.baths} Baths
+                            <i className="icon-Bathtub"></i>
+                            {listing.baths} Baths
                         </li>
-                        <li className="d-flex align-items-center gap_8 h6 text_primary-color fw-6">
-                            <i className="icon-Ruler"></i>
-                            {property.sqft} sqft
-                        </li>
+                        {listing.sqft > 0 && (
+                            <li className="d-flex align-items-center gap_8 h6 text_primary-color fw-6" suppressHydrationWarning>
+                                <i className="icon-Ruler"></i>
+                                {listing.sqft.toLocaleString()} sqft
+                            </li>
+                        )}
                     </ul>
                 </div>
                 <ul className="list-action d-flex gap_16">
                     <li>
-                        <a href="#" className="">
+                        <a href="#" aria-label="Compare">
                             <i className="icon-ArrowsLeftRight"></i>
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="#" aria-label="Save">
                             <span className="icon icon-Heart"></span>
                         </a>
                     </li>
                     <li>
-                        {" "}
-                        <a href="#" className="">
+                        <a href="#" aria-label="Share">
                             <i className="icon-ShareNetwork"></i>
                         </a>
                     </li>

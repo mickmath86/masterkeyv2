@@ -34,7 +34,17 @@ export type RepliersListing = {
         parking?: string;
         waterfront?: string;
         virtualTourUrl?: string;
+        alternateURLVideoLink?: string;
         HOAFee?: string;
+        extras?: string;
+        flooringType?: string;
+        foundationType?: string;
+        roofMaterial?: string;
+        patio?: string;
+        numFireplaces?: number | null;
+        numParkingSpaces?: number;
+        laundryLevel?: string | null;
+        balcony?: string | null;
     };
     map?: {
         latitude?: number;
@@ -182,4 +192,54 @@ function mapPropertyType(raw: string): string {
     if (lower.includes("commercial") || lower.includes("office")) return "Office";
     if (lower.includes("single") || lower.includes("residential") || lower.includes("house")) return "House";
     return "House";
+}
+
+// ─── Full Detail Mapper ──────────────────────────────────────────────────────
+
+import type { ListingDetail } from "@/types/listing";
+
+export function mapListingToDetail(listing: RepliersListing): ListingDetail {
+    const base = mapListingToProperty(listing);
+    const details = listing.details || {};
+    const addr = listing.address || {};
+    const lot = (listing as unknown as Record<string, unknown>).lot as Record<string, unknown> | undefined;
+    const condo = (listing as unknown as Record<string, unknown>).condominium as Record<string, unknown> | undefined;
+
+    // All images as full CDN URLs
+    const images = (listing.images || []).map(getRepliersImageUrl);
+
+    // Extract YouTube video ID or full URL
+    const videoUrl = details.alternateURLVideoLink || undefined;
+
+    return {
+        ...base,
+        images,
+        videoUrl,
+        virtualTourUrl: details.virtualTourUrl as string | undefined,
+        yearBuilt: details.yearBuilt as string | undefined,
+        lotSqft: lot?.squareFeet as number | undefined,
+        heating: details.heating as string | undefined,
+        airConditioning: details.airConditioning as string | undefined,
+        swimmingPool: details.swimmingPool as string | undefined,
+        extras: details.extras,
+        flooringType: details.flooringType,
+        foundationType: details.foundationType,
+        roofMaterial: details.roofMaterial,
+        patio: details.patio,
+        numFireplaces: details.numFireplaces,
+        numParkingSpaces: details.numParkingSpaces,
+        hoaFee: details.HOAFee,
+        waterfront: details.waterfront,
+        laundryLevel: details.laundryLevel,
+        balcony: details.balcony,
+        lotFeatures: lot?.features as string | undefined,
+        condominium: condo ? {
+            amenities: (condo.amenities as string[] | undefined) || [],
+            stories: condo.stories as string | undefined,
+            parkingType: condo.parkingType as string | undefined,
+        } : undefined,
+        // Repliers doesn't natively return floor plan images or PDFs — hide sections
+        floorPlans: [],
+        documents: [],
+    };
 }
