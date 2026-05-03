@@ -12,8 +12,18 @@ type PageProps = {
 
 async function fetchListing(mlsNumber: string): Promise<RepliersListing | null> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-        const res = await fetch(`${baseUrl}/api/listing/${mlsNumber}`, {
+        // Call Repliers directly from the server — avoids internal self-fetch
+        // which breaks on Vercel (no reliable self-URL in SSR context)
+        const apiKey = process.env.REPLIERS_API_KEY;
+        if (!apiKey) {
+            console.error("REPLIERS_API_KEY not set");
+            return null;
+        }
+        const res = await fetch(`https://api.repliers.io/listings/${mlsNumber}`, {
+            headers: {
+                "REPLIERS-API-KEY": apiKey,
+                "Content-Type": "application/json",
+            },
             next: { revalidate: 300 },
         });
         if (!res.ok) return null;
