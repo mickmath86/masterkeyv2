@@ -1,24 +1,7 @@
-/**
- * Ventura County city showcase — async Server Component.
- *
- * Bento grid layout:
- *   Row 1: [small 300×300] [small 300×300]  |  [wide 630×300]
- *   Row 2: [wide 630×300]                   |  [small 300×300] [small 300×300]
- *   Row 3: [small 300×300] [small 300×300]  |  [wide 630×300]
- *   Row 4: [wide 630×300]                   |  [small 300×300] [small 300×300]
- *
- * Each image is constrained to its card's exact dimensions via a
- * position:relative wrapper + objectFit:cover so the bento proportions
- * are always preserved regardless of source image dimensions.
- */
+"use client";
 
 import Image from "next/image";
-import React from "react";
-
-const REPLIERS_API_KEY = process.env.REPLIERS_API_KEY ?? "";
-const REPLIERS_BASE = "https://api.repliers.io";
-const CDN_BASE = "https://cdn.repliers.io";
-const REVALIDATE = 3600; // 1 hour
+import React, { useEffect, useState } from "react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -28,16 +11,24 @@ type CityData = {
     count: number;
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Cities ─────────────────────────────────────────────────────────────────
 
-function cdnUrl(path: string): string {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    return `${CDN_BASE}/${path}?class=large`;
-}
+const CITIES = [
+    "Thousand Oaks",
+    "Camarillo",
+    "Westlake Village",
+    "Ventura",
+    "Oxnard",
+    "Newbury Park",
+    "Simi Valley",
+    "Moorpark",
+    "Agoura Hills",
+    "Calabasas",
+];
 
-async function fetchCityData(city: string): Promise<CityData> {
-    const base: CityData = { city, coverImageUrl: null, count: 0 };
+// ── Fetch one city via the existing /api/listings proxy ────────────────────
+
+async function fetchCity(city: string): Promise<CityData> {
     try {
         const params = new URLSearchParams({
             city,
@@ -47,33 +38,64 @@ async function fetchCityData(city: string): Promise<CityData> {
             propertyType: "Residential",
             hasImages: "true",
             sortBy: "listPriceDesc",
-            fields: "mlsNumber,listPrice,images[1]",
             resultsPerPage: "1",
+            fields: "mlsNumber,listPrice,images[1]",
         });
-        const res = await fetch(`${REPLIERS_BASE}/listings?${params}`, {
-            headers: { "REPLIERS-API-KEY": REPLIERS_API_KEY, "Content-Type": "application/json" },
-            next: { revalidate: REVALIDATE },
-        });
-        if (!res.ok) return base;
+
+        const res = await fetch(`/api/listings?${params.toString()}`);
+        if (!res.ok) return { city, coverImageUrl: null, count: 0 };
+
         const data = await res.json();
         const listing = data.listings?.[0];
-        const imagePath = listing?.images?.[0];
+        const imagePath: string | undefined = listing?.images?.[0];
+
+        let coverImageUrl: string | null = null;
+        if (imagePath) {
+            coverImageUrl = imagePath.startsWith("http")
+                ? imagePath
+                : `https://cdn.repliers.io/${imagePath}?class=large`;
+        }
+
         return {
             city,
+            coverImageUrl,
             count: data.count ?? 0,
-            coverImageUrl: imagePath ? cdnUrl(imagePath) : null,
         };
     } catch {
-        return base;
+        return { city, coverImageUrl: null, count: 0 };
     }
 }
 
-// ── Card component ─────────────────────────────────────────────────────────
+// ── Skeleton card shown while loading ──────────────────────────────────────
 
-/**
- * wide=false → 300×300 square card
- * wide=true  → 630×300 landscape card (fills the full column)
- */
+function SkeletonCard({ wide = false }: { wide?: boolean }) {
+    return (
+        <div
+            style={{
+                flex: wide ? undefined : "1 1 0",
+                minWidth: 0,
+            }}
+        >
+            <div
+                style={{
+                    width: "100%",
+                    height: 300,
+                    borderRadius: 12,
+                    background: "linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%)",
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer 1.4s infinite",
+                    marginBottom: 18,
+                }}
+            />
+            <div style={{ height: 20, width: "60%", borderRadius: 6, background: "#e8e8e8", marginBottom: 8 }} />
+            <div style={{ height: 14, width: "40%", borderRadius: 6, background: "#f0f0f0" }} />
+            <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+        </div>
+    );
+}
+
+// ── Single city card ───────────────────────────────────────────────────────
+
 function CityCard({
     data,
     wide = false,
@@ -89,26 +111,21 @@ function CityCard({
             ? `${data.count} ${data.count === 1 ? "Property" : "Properties"}`
             : "View Listings";
 
-    // Card pixel dimensions — match original template exactly
-    const W = wide ? 630 : 300;
-    const H = 300;
-
     return (
         <div
             className="location-item hover-image scrolling-effect effectFade"
             data-delay={delay}
-            // Each small card must stretch to fill its flex slot
             style={wide ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
             <a href={href} className="img-style mb_18">
-                {/* Fixed-size image container — img fills and crops to exactly W×H */}
+                {/* Fixed-height container — image fills and is cropped to fit */}
                 <div
                     style={{
                         position: "relative",
                         width: "100%",
-                        height: H,
-                        overflow: "hidden",
+                        height: 300,
                         borderRadius: 12,
+                        overflow: "hidden",
                     }}
                 >
                     {data.coverImageUrl ? (
@@ -117,11 +134,10 @@ function CityCard({
                             alt={`${data.city} homes`}
                             fill
                             unoptimized
-                            sizes={`${W}px`}
+                            sizes={wide ? "630px" : "300px"}
                             style={{ objectFit: "cover", objectPosition: "center" }}
                         />
                     ) : (
-                        /* Branded gradient placeholder */
                         <div
                             style={{
                                 width: "100%",
@@ -160,24 +176,51 @@ function CityCard({
     );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────
+// ── Main component ─────────────────────────────────────────────────────────
 
-export default async function Location() {
-    const cities = [
-        "Thousand Oaks",
-        "Camarillo",
-        "Westlake Village",
-        "Ventura",
-        "Oxnard",
-        "Newbury Park",
-        "Simi Valley",
-        "Moorpark",
-        "Agoura Hills",
-        "Calabasas",
-    ];
+export default function Location() {
+    const [cityData, setCityData] = useState<CityData[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9] =
-        await Promise.all(cities.map(fetchCityData));
+    useEffect(() => {
+        Promise.all(CITIES.map(fetchCity))
+            .then(setCityData)
+            .finally(() => setLoading(false));
+    }, []);
+
+    const [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9] = cityData;
+
+    // ── Loading skeleton ──
+    if (loading) {
+        return (
+            <div className="section-location tf-spacing-1">
+                <div className="tf-container">
+                    <div className="heading-section justify-content-center text-center mb_48">
+                        <span className="sub text-uppercase fw-6 text_secondary-color-2">
+                            Explore Cities
+                        </span>
+                        <h3>Our Location For You</h3>
+                    </div>
+                    <div className="wrap-location">
+                        <div className="tf-grid-layout lg-col-2">
+                            <div className="d-flex gap_30">
+                                <SkeletonCard />
+                                <SkeletonCard />
+                            </div>
+                            <SkeletonCard wide />
+                        </div>
+                        <div className="tf-grid-layout lg-col-2">
+                            <SkeletonCard wide />
+                            <div className="d-flex gap_30">
+                                <SkeletonCard />
+                                <SkeletonCard />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="section-location tf-spacing-1">
@@ -192,7 +235,7 @@ export default async function Location() {
                 </div>
 
                 <div className="wrap-location">
-                    {/* ── Row 1: [small, small] | [wide] ── */}
+                    {/* Row 1: [small, small] | [wide] */}
                     <div className="tf-grid-layout lg-col-2">
                         <div className="d-flex gap_30">
                             <CityCard data={c0} delay="0.2" />
@@ -201,7 +244,7 @@ export default async function Location() {
                         <CityCard data={c2} wide delay="0.4" />
                     </div>
 
-                    {/* ── Row 2: [wide] | [small, small] ── */}
+                    {/* Row 2: [wide] | [small, small] */}
                     <div className="tf-grid-layout lg-col-2">
                         <CityCard data={c3} wide delay="0.4" />
                         <div className="d-flex gap_30">
@@ -210,7 +253,7 @@ export default async function Location() {
                         </div>
                     </div>
 
-                    {/* ── Row 3: [small, small] | [wide] ── */}
+                    {/* Row 3: [small, small] | [wide] */}
                     <div className="tf-grid-layout lg-col-2">
                         <div className="d-flex gap_30">
                             <CityCard data={c6} delay="0.2" />
@@ -219,10 +262,9 @@ export default async function Location() {
                         <CityCard data={c8} wide delay="0.4" />
                     </div>
 
-                    {/* ── Row 4: [wide] | [small, small] ── */}
+                    {/* Row 4: [wide] | spacer */}
                     <div className="tf-grid-layout lg-col-2">
                         <CityCard data={c9} wide delay="0.4" />
-                        {/* Two invisible spacer cards to keep grid symmetrical */}
                         <div className="d-flex gap_30" style={{ visibility: "hidden", pointerEvents: "none" }}>
                             <div style={{ flex: "1 1 0" }} />
                             <div style={{ flex: "1 1 0" }} />
