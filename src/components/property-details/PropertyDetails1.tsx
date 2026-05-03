@@ -36,6 +36,8 @@ type Property = {
     coordinates: [number, number];
     garages: number;
     city: string;
+    description?: string;
+    mlsNumber?: string;
 };
 
 export default function PropertyDetails1({ property }: { property: Property }) {

@@ -19,7 +19,7 @@ export default function About() {
                                 one of life’s
                                 biggest
                                 milestones with heart, expertise, and unwavering commitment.</p>
-                            <Link href={'/listing-topmap-grid'} className="tf-btn btn-bg-1 btn-px-32">
+                            <Link href={'/listing-half-map-grid'} className="tf-btn btn-bg-1 btn-px-32">
                                 <span>View Properties</span>
                                 <span className="bg-effect"></span>
                             </Link>

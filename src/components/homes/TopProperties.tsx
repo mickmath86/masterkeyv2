@@ -1,12 +1,36 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, EffectFade } from "swiper/modules";
-import { topProperties } from "@/data/properties";
 import Image from "next/image";
 import Link from "next/link";
+import type { MappedProperty } from "@/lib/repliers";
+import { mapListingToProperty } from "@/lib/repliers";
 
 export default function TopProperties() {
+    const [properties, setProperties] = useState<MappedProperty[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchTop() {
+            try {
+                const res = await fetch(
+                    "/api/listings?resultsPerPage=6&sortBy=listPriceDesc&fields=mlsNumber,listPrice,address,details,images%5B1%5D,map"
+                );
+                if (!res.ok) throw new Error("Failed");
+                const data = await res.json();
+                setProperties((data.listings || []).map(mapListingToProperty).slice(0, 6));
+            } catch (err) {
+                console.error("TopProperties fetch error:", err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchTop();
+    }, []);
+
+    if (loading || properties.length === 0) return null;
+
     return (
         <div className="sw-layout section-top-properties tf-spacing-3">
             <div className="tf-container w-1830">
@@ -33,29 +57,18 @@ export default function TopProperties() {
                         nextEl: ".swn1",
                     }}
                     onInit={(swiper) => {
-                        const fractionEl = document.querySelector(
-                            ".sw-fraction-layout"
-                        );
-                        const swiperContainer =
-                            document.querySelector(".sw-layout .swiper");
-
+                        const fractionEl = document.querySelector(".sw-fraction-layout");
+                        const swiperContainer = document.querySelector(".sw-layout .swiper");
                         if (fractionEl && swiperContainer) {
                             const updateFraction = () => {
-                                const current = String(
-                                    swiper.realIndex + 1
-                                ).padStart(2, "0");
+                                const current = String(swiper.realIndex + 1).padStart(2, "0");
                                 const totalSlides = String(
                                     swiper.slides.filter(
-                                        (slide) =>
-                                            !slide.classList.contains(
-                                                "swiper-slide-duplicate"
-                                            )
+                                        (slide) => !slide.classList.contains("swiper-slide-duplicate")
                                     ).length
                                 ).padStart(2, "0");
-
                                 fractionEl.innerHTML = `<span class="current">${current}</span> / <span class="total">${totalSlides}</span>`;
                             };
-
                             swiper.on("init", updateFraction);
                             swiper.on("slideChange", updateFraction);
                             updateFraction();
@@ -68,25 +81,24 @@ export default function TopProperties() {
                     }}
                     className="scrolling-effect effectRight"
                 >
-                    {topProperties.slice(0, 6).map((property) => (
-                        <SwiperSlide key={property.id}>
+                    {properties.map((property) => (
+                        <SwiperSlide key={property.mlsNumber}>
                             <div className="card-house style-default dark hover-image">
                                 <div className="img-style mb_20">
                                     <Image
                                         src={property.imgSrc}
                                         width={570}
                                         height={427}
-                                        alt="home"
+                                        alt={property.alt || "property"}
+                                        unoptimized
                                     />
                                     <div className="wrap-tag d-flex gap_8 mb_12">
                                         <div
                                             className={`tag ${
                                                 property.type === "Sale"
                                                     ? "sale"
-                                                    : property.type === "Rent"
-                                                    ? "rent"
-                                                    : property.type
-                                            }  text-button-small fw-6 text_primary-color`}
+                                                    : "rent"
+                                            } text-button-small fw-6 text_primary-color`}
                                         >
                                             For {property.type}
                                         </div>
@@ -95,33 +107,29 @@ export default function TopProperties() {
                                         </div>
                                     </div>
                                     <Link
-                                        href={`/property-details-1/${property.id}`}
+                                        href={`/property-details-1/${property.mlsNumber}`}
                                         className="overlay-link"
                                     ></Link>
                                     <div className="wishlist style-1">
                                         <div className="hover-tooltip tooltip-left box-icon">
                                             <span className="icon icon-Heart"></span>
-                                            <span className="tooltip">
-                                                Add to Wishlist
-                                            </span>
+                                            <span className="tooltip">Add to Wishlist</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="content">
-                                    <h4 className="price mb_12">
-                                        {property.price}
+                                    <h4 className="price mb_12" suppressHydrationWarning>
+                                        ${property.price.toLocaleString()}
                                         <span className="text_secondary-color text-body-default">
-                                            {property.type === "Sale"
-                                                ? "/Sqft"
-                                                : "/month"}
+                                            {property.type === "Sale" ? "" : "/month"}
                                         </span>
                                     </h4>
-                                    <a
-                                        href={`/property-details-1/${property.id}`}
+                                    <Link
+                                        href={`/property-details-1/${property.mlsNumber}`}
                                         className="title mb_8 h5 link text_primary-color"
                                     >
                                         {property.title}
-                                    </a>
+                                    </Link>
                                     <p>{property.address}</p>
                                     <ul className="info d-flex">
                                         <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
@@ -129,12 +137,12 @@ export default function TopProperties() {
                                             {property.beds} Beds
                                         </li>
                                         <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
-                                            <i className="icon-Bathstub"></i>
+                                            <i className="icon-Bathtub"></i>
                                             {property.baths} Baths
                                         </li>
                                         <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
                                             <i className="icon-Ruler"></i>
-                                            {property.sqft}
+                                            {property.sqft ? `${property.sqft.toLocaleString()} sqft` : "N/A"}
                                         </li>
                                     </ul>
                                 </div>

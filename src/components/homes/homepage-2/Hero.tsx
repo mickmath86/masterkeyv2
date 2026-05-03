@@ -18,7 +18,7 @@ const heroSlides = [
             "From cozy bedrooms to open-concept living areas, Luminor offers thoughtfully designed spaces tailored to fit your lifestyle and dreams.",
         buttons: [
             {
-                href: "/listing-topmap-grid",
+                href: "/listing-half-map-grid",
                 className: "tf-btn btn-bg-1 btn-px-32",
                 label: "View Properties",
             },
@@ -36,7 +36,7 @@ const heroSlides = [
             "From cozy bedrooms to open-concept living areas, Luminor offers thoughtfully designed spaces tailored to fit your lifestyle and dreams.",
         buttons: [
             {
-                href: "/listing-topmap-grid",
+                href: "/listing-half-map-grid",
                 className: "tf-btn btn-bg-1 btn-px-32",
                 label: "View Properties",
             },

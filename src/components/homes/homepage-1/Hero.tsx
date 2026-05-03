@@ -28,7 +28,7 @@ export default function Hero() {
                             retreat.
                         </p>
                         <Link
-                            href={"/listing-topmap-grid"}
+                            href={"/listing-half-map-grid"}
                             className="tf-btn btn-px-32 btn-bg-1"
                         >
                             <span>View Properties</span>

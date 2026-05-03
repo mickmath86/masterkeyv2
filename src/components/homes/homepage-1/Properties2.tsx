@@ -1,70 +1,58 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
-
-const propertiesData = [
-    {
-        id: "tab1",
-        title: "Casa Lomas de Machali",
-        address: "72 Sunset Avenue, Los Angeles, California",
-        img: "/assets/images/section/features-properties-1.jpg",
-    },
-    {
-        id: "tab2",
-        title: "Villa Del Mar Retreat",
-        address: "72 Sunset Avenue, Los Angeles, California",
-        img: "/assets/images/section/features-properties-2.jpg",
-    },
-    {
-        id: "tab3",
-        title: "Rancho Vista Verde",
-        address: "72 Sunset Avenue, Los Angeles, California",
-        img: "/assets/images/section/features-properties-3.jpg",
-    },
-    {
-        id: "tab4",
-        title: "Sunset Heights Estate",
-        address: "72 Sunset Avenue, Los Angeles, California",
-        img: "/assets/images/section/features-properties-4.jpg",
-    },
-    {
-        id: "tab5",
-        title: "Coastal Serenity Cottage",
-        address: "72 Sunset Avenue, Los Angeles, California",
-        img: "/assets/images/section/features-properties-5.jpg",
-    },
-];
+import React, { useState, useEffect } from "react";
+import type { MappedProperty } from "@/lib/repliers";
+import { mapListingToProperty } from "@/lib/repliers";
 
 export default function Properties2() {
-    const [activeTab, setActiveTab] = useState("tab1");
+    const [activeTab, setActiveTab] = useState("");
+    const [properties, setProperties] = useState<MappedProperty[]>([]);
+    const [loading, setLoading] = useState(true);
     let hoverTimer: ReturnType<typeof setTimeout>;
 
-    const handleMouseEnter = (tabId: string) => {
-        hoverTimer = setTimeout(() => {
-            setActiveTab(tabId);
-        }, 100);
+    useEffect(() => {
+        async function fetchFeatured() {
+            try {
+                const res = await fetch(
+                    "/api/listings?resultsPerPage=5&sortBy=listPriceDesc&fields=mlsNumber,listPrice,address,details,images%5B1%5D,map"
+                );
+                if (!res.ok) throw new Error("Failed");
+                const data = await res.json();
+                const mapped: MappedProperty[] = (data.listings || []).map(mapListingToProperty).slice(0, 5);
+                setProperties(mapped);
+                if (mapped.length > 0) setActiveTab(mapped[0].mlsNumber);
+            } catch (err) {
+                console.error("Properties2 fetch error:", err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchFeatured();
+    }, []);
+
+    const handleMouseEnter = (id: string) => {
+        hoverTimer = setTimeout(() => setActiveTab(id), 100);
     };
 
     const handleMouseLeave = () => {
         clearTimeout(hoverTimer);
     };
 
+    if (loading || properties.length === 0) return null;
+
     return (
         <div className="section-features-property tf-spacing-1">
             <div className="tf-container">
                 <div className="tf-grid-layout lg-col-2 tabs-hover-wrap align-items-center">
                     <div className="box">
-                        {propertiesData.map((property) => (
+                        {properties.map((property) => (
                             <div
-                                key={property.id}
+                                key={property.mlsNumber}
                                 className={`process-item item scrolling-effect effectLeft${
-                                    activeTab === property.id ? " active" : ""
+                                    activeTab === property.mlsNumber ? " active" : ""
                                 }`}
-                                data-tab={property.id}
-                                onMouseEnter={() =>
-                                    handleMouseEnter(property.id)
-                                }
+                                onMouseEnter={() => handleMouseEnter(property.mlsNumber)}
                                 onMouseLeave={handleMouseLeave}
                             >
                                 <div className="property-item">
@@ -72,7 +60,7 @@ export default function Properties2() {
                                     <div className="content">
                                         <h4 className="title mb_8">
                                             <Link
-                                                href={'/property-details-1/1'}
+                                                href={`/property-details-1/${property.mlsNumber}`}
                                                 className="link"
                                             >
                                                 {property.title}
@@ -85,20 +73,23 @@ export default function Properties2() {
                         ))}
                     </div>
                     <div className="tab-content-wrap">
-                        {propertiesData.map((property) => (
+                        {properties.map((property) => (
                             <div
-                                key={property.id}
-                                id={property.id}
+                                key={property.mlsNumber}
                                 className={`tab-content${
-                                    activeTab === property.id ? " active" : ""
+                                    activeTab === property.mlsNumber ? " active" : ""
                                 }`}
                             >
-                                <Link href={'/property-details-1/1'} className="img-style">
+                                <Link
+                                    href={`/property-details-1/${property.mlsNumber}`}
+                                    className="img-style"
+                                >
                                     <Image
-                                        src={property.img}
+                                        src={property.imgSrc}
                                         width={645}
                                         height={645}
-                                        alt="process"
+                                        alt={property.alt || "property"}
+                                        unoptimized
                                     />
                                 </Link>
                             </div>

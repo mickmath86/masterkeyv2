@@ -165,7 +165,7 @@ export default function Properties() {
                 </div>
 
                 <a
-                    href="listing-topmap-grid.html"
+                    href="/listing-half-map-grid"
                     className="tf-btn btn-bg-1 mx-auto btn-px-32"
                 >
                     <span>View All Properties</span>

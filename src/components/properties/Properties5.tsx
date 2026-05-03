@@ -1,23 +1,165 @@
 "use client";
-import { allProperties } from "@/data/properties";
 import Image from "next/image";
-import React, { useEffect, useRef, useState, useReducer } from "react";
-import { initialState, reducer } from "@/context/propertiesFilterReduce";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Pagination from "@/components/common/Pagination";
-import type { Property } from "@/data/properties";
+import type { MappedProperty } from "@/lib/repliers";
+import { mapListingToProperty } from "@/lib/repliers";
 import DropdownSelect2 from "../common/DropdownSelect2";
 import SidebarFilter3 from "../common/SidebarFilter3";
 import Link from "next/link";
 import MapComponent from "../common/Map";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+    bedroomOptions,
+    budgetOptions,
+    cityOptions,
+} from "@/data/optionfilter";
 
-function parseSizeValue(val: string) {
-    if (val === "Min (SqFt)" || val === "Max (SqFt)") return val;
-    return val.replace(/[^0-9]/g, "");
+function buildBudgetParams(budget: string) {
+    if (!budget || budget === "Max. Price") return {};
+    if (budget.startsWith("Under $")) {
+        return { maxPrice: budget.replace("Under $", "").replace(/,/g, "") };
+    }
+    if (budget.startsWith("Above $")) {
+        return { minPrice: budget.replace("Above $", "").replace(/,/g, "") };
+    }
+    if (budget.startsWith("$")) {
+        return { maxPrice: budget.replace("$", "").replace(/,/g, "") };
+    }
+    return {};
 }
 
 export default function Properties5() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const ddContainer = useRef<HTMLDivElement>(null);
     const advanceBtnRef = useRef<HTMLDivElement>(null);
+
+    // Filter state — initialize from URL query params
+    const [searchKeyword, setSearchKeyword] = useState(searchParams.get("q") || "");
+    const [city, setCity] = useState(searchParams.get("city") || "All Cities");
+    const [type, setType] = useState(searchParams.get("type") || "Any Type");
+    const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") || "Any Bedrooms");
+    const [bathrooms, setBathrooms] = useState(searchParams.get("bathrooms") || "Any Bathrooms");
+    const [garages, setGarages] = useState(searchParams.get("garages") || "Any Garages");
+    const [budget, setBudget] = useState(searchParams.get("budget") || "Max. Price");
+    const [minSize, setMinSize] = useState(searchParams.get("minSize") || "Min (SqFt)");
+    const [maxSize, setMaxSize] = useState(searchParams.get("maxSize") || "Max (SqFt)");
+    const [features, setFeatures] = useState<string[]>([]);
+    const [sortingOption, setSortingOption] = useState("Sort by (Default)");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemPerPage = 8;
+
+    // Data state
+    const [listings, setListings] = useState<MappedProperty[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(true);
+
+    // Sync URL params when filters change
+    const updateUrl = useCallback((params: Record<string, string>) => {
+        const url = new URL(window.location.href);
+        Object.entries(params).forEach(([k, v]) => {
+            if (v && v !== "All Cities" && v !== "Any Type" && v !== "Any Bedrooms"
+                && v !== "Any Bathrooms" && v !== "Any Garages" && v !== "Max. Price"
+                && v !== "Min (SqFt)" && v !== "Max (SqFt)") {
+                url.searchParams.set(k, v);
+            } else {
+                url.searchParams.delete(k);
+            }
+        });
+        router.replace(url.pathname + url.search, { scroll: false });
+    }, [router]);
+
+    // Fetch from Repliers API
+    const fetchListings = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams();
+
+            // Map API type
+            if (type && type !== "Any Type") {
+                params.set("type", type.toLowerCase() === "sale" ? "sale" : "lease");
+            }
+
+            // City filter
+            if (city && city !== "All Cities") {
+                params.set("city", city);
+            }
+
+            // Bedrooms
+            if (bedrooms && bedrooms !== "Any Bedrooms") {
+                if (bedrooms === "4+") {
+                    params.set("minBedrooms", "4");
+                } else {
+                    params.set("minBedrooms", bedrooms);
+                    params.set("maxBedrooms", bedrooms);
+                }
+            }
+
+            // Bathrooms
+            if (bathrooms && bathrooms !== "Any Bathrooms") {
+                if (bathrooms === "4+") {
+                    params.set("minBaths", "4");
+                } else {
+                    params.set("minBaths", bathrooms);
+                    params.set("maxBaths", bathrooms);
+                }
+            }
+
+            // Budget
+            const budgetParams = buildBudgetParams(budget);
+            Object.entries(budgetParams).forEach(([k, v]) => params.set(k, v));
+
+            // Size
+            if (minSize && minSize !== "Min (SqFt)") {
+                params.set("minSqft", minSize.replace(/[^0-9]/g, ""));
+            }
+            if (maxSize && maxSize !== "Max (SqFt)") {
+                params.set("maxSqft", maxSize.replace(/[^0-9]/g, ""));
+            }
+
+            // Keyword search
+            if (searchKeyword && searchKeyword.trim()) {
+                params.set("search", searchKeyword.trim());
+            }
+
+            // Sorting
+            if (sortingOption === "Price Ascending") {
+                params.set("sortBy", "listPriceAsc");
+            } else if (sortingOption === "Price Descending") {
+                params.set("sortBy", "listPriceDesc");
+            }
+
+            // Pagination
+            params.set("pageNum", String(currentPage));
+            params.set("resultsPerPage", String(itemPerPage));
+
+            const response = await fetch(`/api/listings?${params.toString()}`);
+            if (!response.ok) throw new Error("Failed to fetch listings");
+
+            const data = await response.json();
+            const mapped = (data.listings || []).map(mapListingToProperty);
+            setListings(mapped);
+            setTotalCount(data.count || 0);
+            setTotalPages(data.numPages || 1);
+        } catch (error) {
+            console.error("Error fetching listings:", error);
+            setListings([]);
+            setTotalCount(0);
+        } finally {
+            setLoading(false);
+        }
+    }, [type, city, bedrooms, bathrooms, budget, minSize, maxSize, searchKeyword, sortingOption, currentPage]);
+
+    useEffect(() => {
+        fetchListings();
+    }, [fetchListings]);
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [type, city, bedrooms, bathrooms, budget, minSize, maxSize, searchKeyword, sortingOption]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -31,236 +173,50 @@ export default function Properties5() {
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const [state, dispatch] = useReducer(reducer, initialState);
-
-    const {
-        bedrooms,
-        bathrooms,
-        garages,
-        city,
-        budget,
-        minSize,
-        maxSize,
-        features,
-        filtered,
-        sortingOption,
-        type,
-        sorted,
-        currentPage,
-        itemPerPage,
-    } = state;
-
-    // Additional state for form elements
-    const [searchKeyword, setSearchKeyword] = useState<string>("");
-
-    // Filtering logic
-    useEffect(() => {
-        let filteredList: Property[] = allProperties;
-
-        // City filter
-        if (city && city !== "All Cities") {
-            filteredList = filteredList.filter(
-                (p) => p.city && p.city === city
-            );
-        }
-
-        // Type filter
-        if (type && type !== "Any Type") {
-            filteredList = filteredList.filter(
-                (p) => p.type && p.type === type
-            );
-        }
-
-        // Bedrooms filter
-        if (bedrooms && bedrooms !== "Any Bedrooms") {
-            if (bedrooms === "4+") {
-                filteredList = filteredList.filter((p) => Number(p.beds) >= 4);
-            } else {
-                const bedroomNum = parseInt(bedrooms, 10);
-                filteredList = filteredList.filter(
-                    (p) => p.beds === bedroomNum
-                );
-            }
-        }
-
-        // Bathrooms filter
-        if (bathrooms && bathrooms !== "Any Bathrooms") {
-            if (bathrooms === "4+") {
-                filteredList = filteredList.filter((p) => Number(p.baths) >= 4);
-            } else {
-                const bathroomNum = parseInt(bathrooms, 10);
-                filteredList = filteredList.filter(
-                    (p) => p.baths === bathroomNum
-                );
-            }
-        }
-
-        // Garages filter
-        if (garages && garages !== "Any Garages") {
-            if (garages === "3+") {
-                filteredList = filteredList.filter(
-                    (p) => Number(p.garages) >= 3
-                );
-            } else {
-                const garageNum = parseInt(garages, 10);
-                filteredList = filteredList.filter(
-                    (p) => p.garages === garageNum
-                );
-            }
-        }
-
-        // Budget filter
-        if (budget && budget !== "Max. Price") {
-            let maxBudget = 0;
-            if (budget.startsWith("Under $")) {
-                maxBudget = parseInt(
-                    budget.replace("Under $", "").replace(/,/g, ""),
-                    10
-                );
-                filteredList = filteredList.filter(
-                    (p) => Number(p.price) <= maxBudget
-                );
-            } else if (budget.startsWith("$")) {
-                maxBudget = parseInt(
-                    budget.replace("$", "").replace(/,/g, ""),
-                    10
-                );
-                filteredList = filteredList.filter(
-                    (p) => Number(p.price) <= maxBudget
-                );
-            } else if (budget.startsWith("Above $")) {
-                maxBudget = parseInt(
-                    budget.replace("Above $", "").replace(/,/g, ""),
-                    10
-                );
-                filteredList = filteredList.filter(
-                    (p) => Number(p.price) > maxBudget
-                );
-            }
-        }
-
-        // Min size filter
-        if (minSize && minSize !== "Min (SqFt)") {
-            const min = parseInt(parseSizeValue(minSize), 10);
-            if (!isNaN(min)) {
-                filteredList = filteredList.filter(
-                    (p) => p.sqft !== undefined && Number(p.sqft) >= min
-                );
-            }
-        }
-
-        // Max size filter
-        if (maxSize && maxSize !== "Max (SqFt)") {
-            const max = parseInt(parseSizeValue(maxSize), 10);
-            if (!isNaN(max)) {
-                filteredList = filteredList.filter(
-                    (p) => p.sqft !== undefined && Number(p.sqft) <= max
-                );
-            }
-        }
-
-        // Features filter
-        if (features && features.length > 0) {
-            filteredList = filteredList.filter(
-                (p) =>
-                    Array.isArray(p.features) &&
-                    features.every((f) => p.features!.includes(f))
-            );
-        }
-
-        // Search keyword filter
-        if (searchKeyword && searchKeyword.trim() !== "") {
-            const kw = searchKeyword.trim().toLowerCase();
-            filteredList = filteredList.filter(
-                (p) =>
-                    (p.title && p.title.toLowerCase().includes(kw)) ||
-                    (p.address && p.address.toLowerCase().includes(kw)) ||
-                    (p.city && p.city.toLowerCase().includes(kw))
-            );
-        }
-
-        dispatch({ type: "SET_FILTERED", payload: filteredList });
-    }, [
-        bedrooms,
-        bathrooms,
-        garages,
-        city,
-        type,
-        budget,
-        minSize,
-        maxSize,
-        features,
-        searchKeyword,
-    ]);
-
-    // Sorting logic
-    useEffect(() => {
-        const sortedList = [...filtered];
-        if (sortingOption === "Price Ascending") {
-            sortedList.sort((a, b) => a.price - b.price);
-        } else if (sortingOption === "Price Descending") {
-            sortedList.sort((a, b) => b.price - a.price);
-        }
-        dispatch({ type: "SET_SORTED", payload: sortedList });
-        dispatch({ type: "SET_CURRENT_PAGE", payload: 1 });
-    }, [filtered, sortingOption]);
-
     const handleFeatureChange = (feature: string) => {
-        const updated = features.includes(feature)
-            ? features.filter((elm) => elm !== feature)
-            : [...features, feature];
-        dispatch({ type: "SET_FEATURES", payload: updated });
+        setFeatures((prev) =>
+            prev.includes(feature) ? prev.filter((f) => f !== feature) : [...prev, feature]
+        );
     };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
+        updateUrl({ q: searchKeyword, city, type, bedrooms, bathrooms, budget });
     };
 
     const toggleAdvancedFilter = () => {
-        if (ddContainer.current) {
-            ddContainer.current.classList.toggle("show");
-        }
+        ddContainer.current?.classList.toggle("show");
     };
 
-    // Props for DropdownSelect
     const allProps = {
         city,
-        setCity: (newCity: string) =>
-            dispatch({ type: "SET_CITY", payload: newCity }),
+        setCity: (v: string) => { setCity(v); updateUrl({ city: v }); },
         type,
-        setType: (newType: string) =>
-            dispatch({ type: "SET_TYPE", payload: newType }),
+        setType: (v: string) => { setType(v); updateUrl({ type: v }); },
         bedrooms,
-        setBedrooms: (newBedrooms: string) =>
-            dispatch({ type: "SET_BEDROOMS", payload: newBedrooms }),
+        setBedrooms: (v: string) => { setBedrooms(v); updateUrl({ bedrooms: v }); },
         bathrooms,
-        setBathrooms: (newBathrooms: string) =>
-            dispatch({ type: "SET_BATHROOMS", payload: newBathrooms }),
+        setBathrooms: (v: string) => { setBathrooms(v); updateUrl({ bathrooms: v }); },
         garages,
-        setGarages: (newGarages: string) =>
-            dispatch({ type: "SET_GARAGES", payload: newGarages }),
+        setGarages: (v: string) => setGarages(v),
         budget,
-        setBudget: (newBudget: string) =>
-            dispatch({ type: "SET_BUDGET", payload: newBudget }),
+        setBudget: (v: string) => { setBudget(v); updateUrl({ budget: v }); },
         minSize,
-        setMinSize: (newMinSize: string) =>
-            dispatch({ type: "SET_MINSIZE", payload: newMinSize }),
+        setMinSize: (v: string) => setMinSize(v),
         maxSize,
-        setMaxSize: (newMaxSize: string) =>
-            dispatch({ type: "SET_MAXSIZE", payload: newMaxSize }),
+        setMaxSize: (v: string) => setMaxSize(v),
         features,
-        setFeatures: (newFeature: string) => {
-            const updated = features.includes(newFeature)
-                ? features.filter((elm) => elm !== newFeature)
-                : [...features, newFeature];
-            dispatch({ type: "SET_FEATURES", payload: updated });
-        },
+        setFeatures: (feature: string) => handleFeatureChange(feature),
     };
+
+    // Map listings to the shape MapComponent expects (needs coordinates)
+    const mapListings = listings.map((p) => ({
+        ...p,
+        id: Number(p.mlsNumber.replace(/\D/g, "").slice(0, 8)) || 1,
+    }));
 
     return (
         <>
@@ -272,9 +228,7 @@ export default function Properties5() {
                     handleSearch={handleSearch}
                     handleFeatureChange={handleFeatureChange}
                     ddContainer={ddContainer as React.RefObject<HTMLDivElement>}
-                    advanceBtnRef={
-                        advanceBtnRef as React.RefObject<HTMLDivElement>
-                    }
+                    advanceBtnRef={advanceBtnRef as React.RefObject<HTMLDivElement>}
                     toggleAdvancedFilter={toggleAdvancedFilter}
                 />
 
@@ -284,38 +238,34 @@ export default function Properties5() {
                             <div>
                                 <ul className="breadcrumb style-1 text-button fw-4 mb_4">
                                     <li>
-                                        <Link className="" href={"/"}>
-                                            Home
-                                        </Link>
+                                        <Link className="" href={"/"}>Home</Link>
                                     </li>
-                                    <li>With Half Map</li>
+                                    <li>Property Listings</li>
                                 </ul>
-                                <h4>With Half Map</h4>
+                                <h4>
+                                    {loading
+                                        ? "Loading listings..."
+                                        : `${totalCount.toLocaleString()} Properties Found`}
+                                </h4>
                             </div>
                             <div className="right d-flex gap_12">
                                 <ul
-                                    className="nav-tab-filter align-items-center group-layout  d-flex gap_12"
+                                    className="nav-tab-filter align-items-center group-layout d-flex gap_12"
                                     role="tablist"
                                 >
-                                    <li
-                                        className="nav-tab-item"
-                                        role="presentation"
-                                    >
+                                    <li className="nav-tab-item" role="presentation">
                                         <a
                                             href="#gridLayout"
-                                            className=" btn-layout grid nav-link-item active"
+                                            className="btn-layout grid nav-link-item active"
                                             data-bs-toggle="tab"
                                         >
                                             <i className="icon-SquaresFour"></i>
                                         </a>
                                     </li>
-                                    <li
-                                        className="nav-tab-item"
-                                        role="presentation"
-                                    >
+                                    <li className="nav-tab-item" role="presentation">
                                         <a
                                             href="#listLayout"
-                                            className="nav-link-item btn-layout list "
+                                            className="nav-link-item btn-layout list"
                                             data-bs-toggle="tab"
                                         >
                                             <i className="icon-Rows"></i>
@@ -323,12 +273,7 @@ export default function Properties5() {
                                     </li>
                                 </ul>
                                 <DropdownSelect2
-                                    onChange={(value) =>
-                                        dispatch({
-                                            type: "SET_SORTING_OPTION",
-                                            payload: value,
-                                        })
-                                    }
+                                    onChange={(value) => setSortingOption(value)}
                                     addtionalParentClass="list-sort"
                                     options={[
                                         "Sort by (Default)",
@@ -338,211 +283,162 @@ export default function Properties5() {
                                 />
                             </div>
                         </div>
-                        <div className="flat-animate-tab">
-                            <div className="tab-content">
-                                <div
-                                    className="tab-pane active show"
-                                    id="gridLayout"
-                                    role="tabpanel"
-                                >
-                                    <div className="tf-grid-layout md-col-2">
-                                        {sorted
-                                            .slice(
-                                                (currentPage - 1) * 8,
-                                                currentPage * 8
-                                            )
-                                            .map((property) => (
-                                                <div
-                                                    key={property.id}
-                                                    className="card-house style-default hover-image"
-                                                    data-id={property.id}
-                                                >
-                                                    <div className="img-style mb_20">
-                                                        <Image
-                                                            src={
-                                                                property.imgSrc
-                                                            }
-                                                            width={410}
-                                                            height={308}
-                                                            alt="home"
-                                                        />
-                                                        <div className="wrap-tag d-flex gap_8 mb_12">
-                                                            <div
-                                                                className={`tag ${
-                                                                    property.type ===
-                                                                    "Sale"
-                                                                        ? "sale"
-                                                                        : property.type ===
-                                                                          "Rent"
-                                                                        ? "rent"
-                                                                        : property.type
-                                                                } text-button-small fw-6 text_primary-color`}
-                                                            >
-                                                                For{" "}
-                                                                {property.type}
-                                                            </div>
-                                                            <div className="tag categoreis text-button-small fw-6 text_primary-color">
-                                                                {
-                                                                    property.categories
-                                                                }
-                                                            </div>
-                                                        </div>
 
-                                                        <Link
-                                                            href={`/property-details-1/${property.id}`}
-                                                            className="overlay-link"
-                                                        ></Link>
-                                                        <div className="wishlist">
-                                                            <div className="hover-tooltip tooltip-left box-icon">
-                                                                <span className="icon icon-Heart"></span>
-                                                                <span className="tooltip">
-                                                                    Add to
-                                                                    Wishlist
-                                                                </span>
+                        {loading ? (
+                            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
+                                <div className="spinner-border" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flat-animate-tab">
+                                <div className="tab-content">
+                                    {/* Grid Layout */}
+                                    <div className="tab-pane active show" id="gridLayout" role="tabpanel">
+                                        <div className="tf-grid-layout md-col-2">
+                                            {listings.length === 0 ? (
+                                                <p className="text-center py-5">No listings found. Try adjusting your filters.</p>
+                                            ) : (
+                                                listings.map((property) => (
+                                                    <div
+                                                        key={property.mlsNumber}
+                                                        className="card-house style-default hover-image"
+                                                        data-id={property.mlsNumber}
+                                                    >
+                                                        <div className="img-style mb_20">
+                                                            <Image
+                                                                src={property.imgSrc}
+                                                                width={410}
+                                                                height={308}
+                                                                alt={property.alt || "property"}
+                                                                unoptimized
+                                                            />
+                                                            <div className="wrap-tag d-flex gap_8 mb_12">
+                                                                <div
+                                                                    className={`tag ${
+                                                                        property.type === "Sale"
+                                                                            ? "sale"
+                                                                            : "rent"
+                                                                    } text-button-small fw-6 text_primary-color`}
+                                                                >
+                                                                    For {property.type}
+                                                                </div>
+                                                                <div className="tag categoreis text-button-small fw-6 text_primary-color">
+                                                                    {property.categories}
+                                                                </div>
+                                                            </div>
+                                                            <Link
+                                                                href={`/property-details-1/${property.mlsNumber}`}
+                                                                className="overlay-link"
+                                                            ></Link>
+                                                            <div className="wishlist">
+                                                                <div className="hover-tooltip tooltip-left box-icon">
+                                                                    <span className="icon icon-Heart"></span>
+                                                                    <span className="tooltip">Add to Wishlist</span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="content">
-                                                        <h4
-                                                            className="price mb_12"
-                                                            suppressHydrationWarning
-                                                        >
-                                                            $
-                                                            {property.price.toLocaleString()}
-                                                            <span className="text_secondary-color text-body-default">
-                                                                {property.type ===
-                                                                "Sale"
-                                                                    ? "/Sqft"
-                                                                    : "/month"}
-                                                            </span>
-                                                        </h4>
-                                                        <Link
-                                                            href={`/property-details-1/${property.id}`}
-                                                            className="title mb_8 h5 link text_primary-color"
-                                                        >
-                                                            {property.title}
-                                                        </Link>
-                                                        <p>
-                                                            {property.address}
-                                                        </p>
-                                                        <ul className="info d-flex">
-                                                            <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
-                                                                <i className="icon-Bed"></i>
-                                                                {property.beds}{" "}
-                                                                Bed
-                                                            </li>
-                                                            <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
-                                                                <i className="icon-Bathtub"></i>
-                                                                {property.baths}{" "}
-                                                                Bath
-                                                            </li>
-                                                            <li
-                                                                className="d-flex align-items-center gap_8 text-title text_primary-color fw-6 "
-                                                                suppressHydrationWarning
+                                                        <div className="content">
+                                                            <h4 className="price mb_12" suppressHydrationWarning>
+                                                                ${property.price.toLocaleString()}
+                                                                <span className="text_secondary-color text-body-default">
+                                                                    {property.type === "Sale" ? "" : "/month"}
+                                                                </span>
+                                                            </h4>
+                                                            <Link
+                                                                href={`/property-details-1/${property.mlsNumber}`}
+                                                                className="title mb_8 h5 link text_primary-color"
                                                             >
-                                                                <i className="icon-Ruler"></i>
-                                                                {property.sqft
-                                                                    ? property.sqft.toLocaleString()
-                                                                    : "0"}{" "}
-                                                                Sqft
-                                                            </li>
-                                                        </ul>
+                                                                {property.title}
+                                                            </Link>
+                                                            <p>{property.address}</p>
+                                                            <ul className="info d-flex">
+                                                                <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
+                                                                    <i className="icon-Bed"></i>
+                                                                    {property.beds} Bed
+                                                                </li>
+                                                                <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
+                                                                    <i className="icon-Bathtub"></i>
+                                                                    {property.baths} Bath
+                                                                </li>
+                                                                <li
+                                                                    className="d-flex align-items-center gap_8 text-title text_primary-color fw-6"
+                                                                    suppressHydrationWarning
+                                                                >
+                                                                    <i className="icon-Ruler"></i>
+                                                                    {property.sqft
+                                                                        ? property.sqft.toLocaleString()
+                                                                        : "N/A"}{" "}
+                                                                    Sqft
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                <div
-                                    className="tab-pane "
-                                    id="listLayout"
-                                    role="tabpanel"
-                                >
-                                    <div className="wrap-list d-grid gap_30">
-                                        {sorted
-                                            .slice(
-                                                (currentPage - 1) * itemPerPage,
-                                                currentPage * itemPerPage
-                                            )
-                                            .map((property) => (
+
+                                    {/* List Layout */}
+                                    <div className="tab-pane" id="listLayout" role="tabpanel">
+                                        <div className="wrap-list d-grid gap_30">
+                                            {listings.map((property) => (
                                                 <div
                                                     className="card-house style-list v3"
-                                                    data-id={property.id}
-                                                    key={property.id}
+                                                    data-id={property.mlsNumber}
+                                                    key={property.mlsNumber}
                                                 >
                                                     <div className="wrap-img">
                                                         <Link
-                                                            href={`/property-details-1/${property.id}`}
+                                                            href={`/property-details-1/${property.mlsNumber}`}
                                                             className="img-style"
                                                         >
                                                             <Image
-                                                                src={
-                                                                    property.imgSrc
-                                                                }
+                                                                src={property.imgSrc}
                                                                 layout="responsive"
                                                                 width={392}
                                                                 height={260}
-                                                                alt={
-                                                                    property.alt ||
-                                                                    "home"
-                                                                }
+                                                                alt={property.alt || "property"}
+                                                                unoptimized
                                                             />
                                                         </Link>
                                                     </div>
                                                     <div className="content">
                                                         <div className="d-flex align-items-center gap_6 top mb_16 flex-wrap justify-content-between">
-                                                            <h4
-                                                                className="price "
-                                                                suppressHydrationWarning
-                                                            >
-                                                                $
-                                                                {property.price.toLocaleString()}
+                                                            <h4 className="price" suppressHydrationWarning>
+                                                                ${property.price.toLocaleString()}
                                                                 <span className="text_secondary-color text-body-default">
-                                                                    {property.type ===
-                                                                    "Sale"
-                                                                        ? "/Sqft"
-                                                                        : "/month"}
+                                                                    {property.type === "Sale" ? "" : "/month"}
                                                                 </span>
                                                             </h4>
                                                             <div className="wrap-tag d-flex gap_8">
                                                                 <div
                                                                     className={`tag ${
-                                                                        property.type ===
-                                                                        "Sale"
-                                                                            ? "sale"
-                                                                            : "rent"
+                                                                        property.type === "Sale" ? "sale" : "rent"
                                                                     } text-button-small fw-6 text_primary-color`}
                                                                 >
-                                                                    {property.type ===
-                                                                    "Sale"
-                                                                        ? "For Sale"
-                                                                        : "For Rent"}
+                                                                    {property.type === "Sale" ? "For Sale" : "For Rent"}
                                                                 </div>
                                                                 <div className="tag categoreis text-button-small fw-6 text_primary-color">
-                                                                    {
-                                                                        property.categories
-                                                                    }
+                                                                    {property.categories}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <Link
-                                                            href={`/property-details-1/${property.id}`}
+                                                            href={`/property-details-1/${property.mlsNumber}`}
                                                             className="title mb_8 h5 link text_primary-color"
                                                         >
                                                             {property.title}
                                                         </Link>
-                                                        <p>
-                                                            {property.address}
-                                                        </p>
+                                                        <p>{property.address}</p>
                                                         <ul className="info d-flex">
                                                             <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
                                                                 <i className="icon-Bed"></i>
-                                                                {property.beds}{" "}
-                                                                Bed
+                                                                {property.beds} Bed
                                                             </li>
                                                             <li className="d-flex align-items-center gap_8 text-title text_primary-color fw-6">
                                                                 <i className="icon-Bathtub"></i>
-                                                                {property.baths}{" "}
-                                                                Bath
+                                                                {property.baths} Bath
                                                             </li>
                                                             <li
                                                                 className="d-flex align-items-center gap_8 text-title text_primary-color fw-6"
@@ -551,31 +447,28 @@ export default function Properties5() {
                                                                 <i className="icon-Ruler"></i>
                                                                 {property.sqft
                                                                     ? property.sqft.toLocaleString()
-                                                                    : "0"}{" "}
+                                                                    : "N/A"}{" "}
                                                                 Sqft
                                                             </li>
                                                         </ul>
                                                     </div>
                                                 </div>
                                             ))}
+                                        </div>
                                     </div>
+
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        setPage={(value) => setCurrentPage(value)}
+                                        itemLength={totalCount}
+                                        itemPerPage={itemPerPage}
+                                    />
                                 </div>
-                                <Pagination
-                                    currentPage={currentPage}
-                                    setPage={(value) =>
-                                        dispatch({
-                                            type: "SET_CURRENT_PAGE",
-                                            payload: value,
-                                        })
-                                    }
-                                    itemLength={sorted.length}
-                                    itemPerPage={itemPerPage}
-                                />
                             </div>
-                        </div>
+                        )}
                     </div>
                     <div className="wrap-right overflow-hidden">
-                        <MapComponent sorted={sorted as []} />
+                        <MapComponent sorted={mapListings as []} />
                     </div>
                 </div>
             </div>

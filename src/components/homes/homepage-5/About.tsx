@@ -23,7 +23,7 @@ export default function About() {
                                 commitment.
                             </p>
                             <a
-                                href="listing-topmap-grid.html"
+                                href="/listing-half-map-grid"
                                 className="tf-btn btn-bg-1 btn-px-32"
                             >
                                 <span>View Properties</span>
