@@ -69,13 +69,17 @@ export default function Properties() {
             data-id={property.mlsNumber}
         >
             <div className="img-style mb_20">
-                <Image
-                    src={property.imgSrc}
-                    width={410}
-                    height={308}
-                    alt={property.alt || "property"}
-                    unoptimized
-                />
+                {/* Fixed-height container keeps all cards uniform (410×308) */}
+                <div style={{ position: "relative", width: "100%", height: 308, overflow: "hidden" }}>
+                    <Image
+                        src={property.imgSrc}
+                        fill
+                        alt={property.alt || "property"}
+                        unoptimized
+                        sizes="410px"
+                        style={{ objectFit: "cover", objectPosition: "center" }}
+                    />
+                </div>
                 <div className="wrap-tag d-flex gap_8 mb_12">
                     <div
                         className={`tag ${

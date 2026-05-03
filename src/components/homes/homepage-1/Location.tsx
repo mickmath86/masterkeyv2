@@ -1,12 +1,15 @@
 /**
  * Ventura County city showcase — async Server Component.
  *
- * For each city we show:
- *  - Cover photo from the most expensive active residential listing that has images
- *  - Live active listing count
- *  - Link to /listing-half-map-grid?city=<city>
+ * Bento grid layout:
+ *   Row 1: [small 300×300] [small 300×300]  |  [wide 630×300]
+ *   Row 2: [wide 630×300]                   |  [small 300×300] [small 300×300]
+ *   Row 3: [small 300×300] [small 300×300]  |  [wide 630×300]
+ *   Row 4: [wide 630×300]                   |  [small 300×300] [small 300×300]
  *
- * If the cover-photo fetch ever fails we fall back to a CSS gradient placeholder.
+ * Each image is constrained to its card's exact dimensions via a
+ * position:relative wrapper + objectFit:cover so the bento proportions
+ * are always preserved regardless of source image dimensions.
  */
 
 import Image from "next/image";
@@ -21,9 +24,7 @@ const REVALIDATE = 3600; // 1 hour
 
 type CityData = {
     city: string;
-    displayName: string;
     coverImageUrl: string | null;
-    mlsNumber: string | null;
     count: number;
 };
 
@@ -36,8 +37,7 @@ function cdnUrl(path: string): string {
 }
 
 async function fetchCityData(city: string): Promise<CityData> {
-    const base: CityData = { city, displayName: city, coverImageUrl: null, mlsNumber: null, count: 0 };
-
+    const base: CityData = { city, coverImageUrl: null, count: 0 };
     try {
         const params = new URLSearchParams({
             city,
@@ -50,22 +50,17 @@ async function fetchCityData(city: string): Promise<CityData> {
             fields: "mlsNumber,listPrice,images[1]",
             resultsPerPage: "1",
         });
-
         const res = await fetch(`${REPLIERS_BASE}/listings?${params}`, {
             headers: { "REPLIERS-API-KEY": REPLIERS_API_KEY, "Content-Type": "application/json" },
             next: { revalidate: REVALIDATE },
         });
-
         if (!res.ok) return base;
         const data = await res.json();
-
         const listing = data.listings?.[0];
         const imagePath = listing?.images?.[0];
-
         return {
-            ...base,
+            city,
             count: data.count ?? 0,
-            mlsNumber: listing?.mlsNumber ?? null,
             coverImageUrl: imagePath ? cdnUrl(imagePath) : null,
         };
     } catch {
@@ -73,13 +68,12 @@ async function fetchCityData(city: string): Promise<CityData> {
     }
 }
 
-// ── Layout helpers ─────────────────────────────────────────────────────────
+// ── Card component ─────────────────────────────────────────────────────────
 
-// The original layout has two rows:
-//   Row 1: [small, small] | [wide]
-//   Row 2: [wide]         | [small, small]
-// We'll keep this exact same structure with 10 cities across the two rows.
-
+/**
+ * wide=false → 300×300 square card
+ * wide=true  → 630×300 landscape card (fills the full column)
+ */
 function CityCard({
     data,
     wide = false,
@@ -90,55 +84,75 @@ function CityCard({
     delay?: string;
 }) {
     const href = `/listing-half-map-grid?city=${encodeURIComponent(data.city)}`;
-    const countLabel = data.count > 0 ? `${data.count} ${data.count === 1 ? "Property" : "Properties"}` : "View Listings";
+    const countLabel =
+        data.count > 0
+            ? `${data.count} ${data.count === 1 ? "Property" : "Properties"}`
+            : "View Listings";
+
+    // Card pixel dimensions — match original template exactly
+    const W = wide ? 630 : 300;
+    const H = 300;
 
     return (
         <div
             className="location-item hover-image scrolling-effect effectFade"
             data-delay={delay}
-            style={{ flex: wide ? undefined : "1 1 0" }}
+            // Each small card must stretch to fill its flex slot
+            style={wide ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
-            <a href={href} className="img-style mb_18" style={{ display: "block", overflow: "hidden" }}>
-                {data.coverImageUrl ? (
-                    <Image
-                        src={data.coverImageUrl}
-                        alt={`${data.displayName} homes`}
-                        width={wide ? 630 : 300}
-                        height={300}
-                        unoptimized
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                ) : (
-                    /* Gradient placeholder when no photo is available */
-                    <div
-                        style={{
-                            width: "100%",
-                            height: 300,
-                            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #e4e95b 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                        }}
-                    >
-                        <span
+            <a href={href} className="img-style mb_18">
+                {/* Fixed-size image container — img fills and crops to exactly W×H */}
+                <div
+                    style={{
+                        position: "relative",
+                        width: "100%",
+                        height: H,
+                        overflow: "hidden",
+                        borderRadius: 12,
+                    }}
+                >
+                    {data.coverImageUrl ? (
+                        <Image
+                            src={data.coverImageUrl}
+                            alt={`${data.city} homes`}
+                            fill
+                            unoptimized
+                            sizes={`${W}px`}
+                            style={{ objectFit: "cover", objectPosition: "center" }}
+                        />
+                    ) : (
+                        /* Branded gradient placeholder */
+                        <div
                             style={{
-                                color: "#e4e95b",
-                                fontSize: 18,
-                                fontWeight: 700,
-                                fontFamily: "Manrope, sans-serif",
-                                letterSpacing: "0.04em",
-                                textAlign: "center",
-                                padding: "0 16px",
+                                width: "100%",
+                                height: "100%",
+                                background:
+                                    "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
                             }}
                         >
-                            {data.displayName}
-                        </span>
-                    </div>
-                )}
+                            <span
+                                style={{
+                                    color: "#e4e95b",
+                                    fontSize: 18,
+                                    fontWeight: 700,
+                                    fontFamily: "Manrope, sans-serif",
+                                    letterSpacing: "0.04em",
+                                    textAlign: "center",
+                                    padding: "0 16px",
+                                }}
+                            >
+                                {data.city}
+                            </span>
+                        </div>
+                    )}
+                </div>
             </a>
             <div className="content">
                 <a href={href} className="mb_4 link h5 text_primary-color">
-                    {data.displayName}, CA
+                    {data.city}, CA
                 </a>
                 <p>{countLabel}</p>
             </div>
@@ -149,7 +163,6 @@ function CityCard({
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default async function Location() {
-    // Fetch all 10 cities in parallel
     const cities = [
         "Thousand Oaks",
         "Camarillo",
@@ -163,13 +176,8 @@ export default async function Location() {
         "Calabasas",
     ];
 
-    const cityData = await Promise.all(cities.map(fetchCityData));
-
-    // Row 1: indices 0,1 (small pair) + index 2 (wide)
-    // Row 2: index 3 (wide) + indices 4,5 (small pair)
-    // Row 3: indices 6,7 (small pair) + index 8 (wide)  — extra row for 10 cities
-    // Row 4: index 9 (wide, centered)
-    const [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9] = cityData;
+    const [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9] =
+        await Promise.all(cities.map(fetchCityData));
 
     return (
         <div className="section-location tf-spacing-1">
@@ -184,7 +192,7 @@ export default async function Location() {
                 </div>
 
                 <div className="wrap-location">
-                    {/* Row 1: two smalls + one wide */}
+                    {/* ── Row 1: [small, small] | [wide] ── */}
                     <div className="tf-grid-layout lg-col-2">
                         <div className="d-flex gap_30">
                             <CityCard data={c0} delay="0.2" />
@@ -193,7 +201,7 @@ export default async function Location() {
                         <CityCard data={c2} wide delay="0.4" />
                     </div>
 
-                    {/* Row 2: one wide + two smalls */}
+                    {/* ── Row 2: [wide] | [small, small] ── */}
                     <div className="tf-grid-layout lg-col-2">
                         <CityCard data={c3} wide delay="0.4" />
                         <div className="d-flex gap_30">
@@ -202,8 +210,8 @@ export default async function Location() {
                         </div>
                     </div>
 
-                    {/* Row 3: two smalls + one wide */}
-                    <div className="tf-grid-layout lg-col-2" style={{ marginTop: "var(--gap-30, 30px)" }}>
+                    {/* ── Row 3: [small, small] | [wide] ── */}
+                    <div className="tf-grid-layout lg-col-2">
                         <div className="d-flex gap_30">
                             <CityCard data={c6} delay="0.2" />
                             <CityCard data={c7} delay="0.3" />
@@ -211,9 +219,14 @@ export default async function Location() {
                         <CityCard data={c8} wide delay="0.4" />
                     </div>
 
-                    {/* Row 4: last city, full-width */}
-                    <div style={{ marginTop: "var(--gap-30, 30px)" }}>
-                        <CityCard data={c9} wide delay="0.2" />
+                    {/* ── Row 4: [wide] | [small, small] ── */}
+                    <div className="tf-grid-layout lg-col-2">
+                        <CityCard data={c9} wide delay="0.4" />
+                        {/* Two invisible spacer cards to keep grid symmetrical */}
+                        <div className="d-flex gap_30" style={{ visibility: "hidden", pointerEvents: "none" }}>
+                            <div style={{ flex: "1 1 0" }} />
+                            <div style={{ flex: "1 1 0" }} />
+                        </div>
                     </div>
                 </div>
             </div>
