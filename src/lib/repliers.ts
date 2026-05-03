@@ -68,7 +68,7 @@ export type RepliersSearchResponse = {
 const REPLIERS_IMG_BASE = "https://cdn.repliers.io";
 
 export function getRepliersImageUrl(imagePath: string): string {
-    if (!imagePath) return "/assets/images/home/home-1.jpg";
+    if (!imagePath) return "/assets/images/placeholder-property.svg";
     if (imagePath.startsWith("http")) return imagePath;
     return `${REPLIERS_IMG_BASE}/${imagePath}?class=large`;
 }

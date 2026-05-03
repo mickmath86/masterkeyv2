@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
         "minBaths", "maxBaths", "minSqft", "maxSqft",
         "propertyType", "class", "style", "type", "status",
         "sortBy", "pageNum", "resultsPerPage", "fields",
-        "search", "lat", "long", "radius",
+        "search", "lat", "long", "radius", "hasImages",
     ];
 
     for (const key of supportedParams) {

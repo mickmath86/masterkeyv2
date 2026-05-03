@@ -4,16 +4,15 @@ export const garageOptions: string[] = ["Any Garages", "1", "2", "3+"];
 export const cityOptions: string[] = [
     "All Cities",
     "Thousand Oaks",
+    "Camarillo",
+    "Westlake Village",
     "Ventura",
     "Oxnard",
-    "Camarillo",
+    "Newbury Park",
     "Simi Valley",
     "Moorpark",
-    "Los Angeles",
-    "Calabasas",
-    "Westlake Village",
     "Agoura Hills",
-    "Santa Barbara",
+    "Calabasas",
 ];
 export const budgetOptions: string[] = [
     "Max. Price",
