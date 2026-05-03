@@ -75,6 +75,30 @@ export default function MapComponent({ property }: { property: Property }) {
 
         if (!mapContainer.current || map.current) return;
 
+        const showPopupForProperty = (p: Property) => {
+            const coords = p.coordinates ?? [p.long, p.lat];
+
+            // Move map to property
+            map.current?.flyTo({
+                center: coords,
+                zoom: 14,
+                speed: 1.2,
+                essential: true,
+            });
+
+            // Show popup
+            popupRef.current?.remove();
+            popupRef.current = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false,
+                anchor: "bottom",
+                offset: [0, -30],
+            })
+                .setLngLat(coords)
+                .setHTML(createPopupHTML(p))
+                .addTo(map.current!);
+        };
+
         try {
             mapboxgl.accessToken = accessToken;
             map.current = new mapboxgl.Map({
@@ -100,11 +124,11 @@ export default function MapComponent({ property }: { property: Property }) {
                     .querySelectorAll(".office-marker")
                     .forEach((m) => m.classList.remove("active"));
                 markerEl.classList.add("active");
-                showPopup(property);
+                showPopupForProperty(property);
             });
 
             // Show popup & move map to this property
-            showPopup(property);
+            showPopupForProperty(property);
 
             map.current.on("click", (e) => {
                 const target = e.originalEvent.target as HTMLElement;
@@ -148,7 +172,7 @@ export default function MapComponent({ property }: { property: Property }) {
             map.current?.remove();
             map.current = null;
         };
-    }, [property]);
+    }, [property, createPopupHTML]);
 
     if (error) return <div className="text-red-600">{error}</div>;
     return <div ref={mapContainer} className="map-container" />;

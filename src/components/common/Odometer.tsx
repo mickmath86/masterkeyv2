@@ -50,7 +50,8 @@ export default function OdometerOnScroll({ value }: Props) {
         loadOdometer();
 
         return () => {
-            if (observer && odometerRef.current) observer.disconnect();
+            const currentRef = odometerRef.current;
+            if (observer && currentRef) observer.disconnect();
         };
     }, [value]);
 
