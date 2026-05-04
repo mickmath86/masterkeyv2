@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const REPLIERS_API_KEY = process.env.REPLIERS_API_KEY;
 const REPLIERS_BASE_URL = "https://api.repliers.io";
 
-// The only cities we serve — always enforced, never overrideable from the client.
+// The only cities we serve — always enforced server-side.
 const VENTURA_COUNTY_CITIES = [
     "Thousand Oaks",
     "Camarillo",
@@ -20,11 +20,9 @@ const VENTURA_COUNTY_CITIES = [
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
-    const params: Record<string, string> = {};
-
-    // Pass through all supported query params
-    const supportedParams = [
-        "city", "state", "area", "neighborhood", "zip",
+    // ── Scalar params (passed through as-is) ──────────────────────────
+    const scalarParams = [
+        "state", "area", "neighborhood", "zip",
         "minPrice", "maxPrice", "minBedrooms", "maxBedrooms",
         "minBaths", "maxBaths", "minSqft", "maxSqft",
         "propertyType", "class", "style", "type", "status",
@@ -32,15 +30,12 @@ export async function GET(request: NextRequest) {
         "search", "lat", "long", "radius", "hasImages",
     ];
 
-    for (const key of supportedParams) {
-        const val = searchParams.get(key);
-        if (val) params[key] = val;
-    }
+    // Build query string manually so we can repeat keys for array params
+    const parts: string[] = [];
 
     // ── City filtering — always enforced ──────────────────────────────
-    // If a specific city was requested, make sure it's one of our cities.
-    // If it's not in our list (or is "All Cities"), replace with the full allow-list.
-    const requestedCity = params.city;
+    // Repliers expects repeated city params: city=X&city=Y&city=Z
+    const requestedCity = searchParams.get("city");
     const isValidCity =
         requestedCity &&
         requestedCity !== "All Cities" &&
@@ -49,26 +44,34 @@ export async function GET(request: NextRequest) {
         );
 
     if (isValidCity) {
-        // Keep the specific city — it's in our list
-        params.city = requestedCity;
+        // Single valid city requested
+        parts.push(`city=${encodeURIComponent(requestedCity)}`);
     } else {
-        // No city filter or unknown city — scope to all our cities
-        // Repliers supports comma-separated city lists
-        params.city = VENTURA_COUNTY_CITIES.join(",");
+        // No city, "All Cities", or unknown city → use all 10
+        for (const city of VENTURA_COUNTY_CITIES) {
+            parts.push(`city=${encodeURIComponent(city)}`);
+        }
     }
 
-    // Always lock state to CA so nothing outside California slips through
-    params.state = "CA";
+    // Always lock to CA
+    parts.push("state=CA");
 
-    // Defaults
-    if (!params.status) params.status = "A";
-    if (!params.type) params.type = "sale";
-    if (!params.resultsPerPage) params.resultsPerPage = "20";
-    if (!params.fields) {
-        params.fields = "mlsNumber,listPrice,address,details,images[1],map,beds,baths";
+    // ── Scalar params ─────────────────────────────────────────────────
+    for (const key of scalarParams) {
+        if (key === "state") continue; // already added above
+        const val = searchParams.get(key);
+        if (val) parts.push(`${key}=${encodeURIComponent(val)}`);
     }
 
-    const queryString = new URLSearchParams(params).toString();
+    // ── Defaults ──────────────────────────────────────────────────────
+    if (!searchParams.get("status")) parts.push("status=A");
+    if (!searchParams.get("type")) parts.push("type=sale");
+    if (!searchParams.get("resultsPerPage")) parts.push("resultsPerPage=20");
+    if (!searchParams.get("fields")) {
+        parts.push("fields=mlsNumber%2ClistPrice%2Caddress%2Cdetails%2Cimages%5B1%5D%2Cmap%2Cbeds%2Cbaths");
+    }
+
+    const queryString = parts.join("&");
     const url = `${REPLIERS_BASE_URL}/listings?${queryString}`;
 
     try {
@@ -77,7 +80,7 @@ export async function GET(request: NextRequest) {
                 "REPLIERS-API-KEY": REPLIERS_API_KEY || "",
                 "Content-Type": "application/json",
             },
-            next: { revalidate: 300 }, // cache for 5 minutes
+            next: { revalidate: 300 },
         });
 
         if (!response.ok) {
