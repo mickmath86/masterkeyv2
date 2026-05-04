@@ -167,7 +167,7 @@ export default function ClientScripts() {
             gsap.from(el, settings);
         });
 
-        ScrollTrigger.refresh();
+        setTimeout(() => ScrollTrigger.refresh(), 50);
     }, [pathname]);
 
     // Split text animations
@@ -293,7 +293,7 @@ export default function ClientScripts() {
             gsap.from(splitTypeSet, settings);
         });
 
-        ScrollTrigger.refresh();
+        setTimeout(() => ScrollTrigger.refresh(), 50);
     }, [pathname]);
 
     // Init animations on mount

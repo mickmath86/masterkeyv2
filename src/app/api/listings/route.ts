@@ -3,6 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 const REPLIERS_API_KEY = process.env.REPLIERS_API_KEY;
 const REPLIERS_BASE_URL = "https://api.repliers.io";
 
+// The only cities we serve — always enforced, never overrideable from the client.
+const VENTURA_COUNTY_CITIES = [
+    "Thousand Oaks",
+    "Camarillo",
+    "Westlake Village",
+    "Ventura",
+    "Oxnard",
+    "Newbury Park",
+    "Simi Valley",
+    "Moorpark",
+    "Agoura Hills",
+    "Calabasas",
+];
+
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
@@ -22,6 +36,29 @@ export async function GET(request: NextRequest) {
         const val = searchParams.get(key);
         if (val) params[key] = val;
     }
+
+    // ── City filtering — always enforced ──────────────────────────────
+    // If a specific city was requested, make sure it's one of our cities.
+    // If it's not in our list (or is "All Cities"), replace with the full allow-list.
+    const requestedCity = params.city;
+    const isValidCity =
+        requestedCity &&
+        requestedCity !== "All Cities" &&
+        VENTURA_COUNTY_CITIES.some(
+            (c) => c.toLowerCase() === requestedCity.toLowerCase()
+        );
+
+    if (isValidCity) {
+        // Keep the specific city — it's in our list
+        params.city = requestedCity;
+    } else {
+        // No city filter or unknown city — scope to all our cities
+        // Repliers supports comma-separated city lists
+        params.city = VENTURA_COUNTY_CITIES.join(",");
+    }
+
+    // Always lock state to CA so nothing outside California slips through
+    params.state = "CA";
 
     // Defaults
     if (!params.status) params.status = "A";
