@@ -5,6 +5,7 @@ import Link from "next/link";
 import MobileMenu from "./MobileMenu";
 import { useState } from "react";
 import Offcanvas from "../common/Offcanvas";
+import UserMenu from "./UserMenu";
 
 export default function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,12 +27,7 @@ export default function Header() {
                                 </Link>
                                 <Nav />
                                 <div className="header-right d-flex align-items-center gap_20">
-                                    <Link
-                                        href="/login"
-                                        className="link text-button text_primary-color"
-                                    >
-                                        Login/Register
-                                    </Link>
+                                    <UserMenu />
                                     <Link href="#" className="tf-btn ">
                                         <span>Submit Property</span>
                                         <span className="bg-effect"></span>

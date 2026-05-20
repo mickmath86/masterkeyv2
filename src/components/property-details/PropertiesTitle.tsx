@@ -1,5 +1,6 @@
 import React from "react";
 import type { ListingDetail } from "@/types/listing";
+import SaveButton from "./SaveButton";
 
 type Props = {
     listing: ListingDetail;
@@ -68,9 +69,7 @@ export default function PropertiesTitle({ listing }: Props) {
                         </a>
                     </li>
                     <li>
-                        <a href="#" aria-label="Save">
-                            <span className="icon icon-Heart"></span>
-                        </a>
+                        <SaveButton listing={listing} />
                     </li>
                     <li>
                         <a href="#" aria-label="Share">

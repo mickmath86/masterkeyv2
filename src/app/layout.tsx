@@ -1,4 +1,5 @@
 import { Manrope } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "photoswipe/dist/photoswipe.css";
 import "swiper/css";
@@ -17,7 +18,8 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
     title: "MasterKey Real Estate | Ventura County Homes",
-    description: "Find homes for sale in Thousand Oaks, Camarillo, Westlake Village, Ventura, Oxnard, Simi Valley, Moorpark, Agoura Hills, and Calabasas.",
+    description:
+        "Find homes for sale in Thousand Oaks, Camarillo, Westlake Village, Ventura, Oxnard, Simi Valley, Moorpark, Agoura Hills, and Calabasas.",
 };
 
 export default function RootLayout({
@@ -26,13 +28,15 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en">
-            <body className={manrope.variable}>
-                <ScrollReset />
-                <div id="wrapper">{children}</div>
-                <ClientScripts />
-                <BackToTop />
-            </body>
-        </html>
+        <ClerkProvider>
+            <html lang="en">
+                <body className={manrope.variable}>
+                    <ScrollReset />
+                    <div id="wrapper">{children}</div>
+                    <ClientScripts />
+                    <BackToTop />
+                </body>
+            </html>
+        </ClerkProvider>
     );
 }
