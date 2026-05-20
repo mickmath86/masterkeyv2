@@ -6,10 +6,22 @@ export default function Process() {
             <div
                 className="parallaxie"
                 style={{
-                    background: 'url("/assets/images/section/banner-3.jpg")',
+                    background: 'url("/assets/images/lynn-ranch-banner.png") center center / cover no-repeat',
+                    position: 'relative',
                 }}
             >
-                <div className="tf-container">
+                <div 
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'linear-gradient(to right, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.2))',
+                        pointerEvents: 'none',
+                    }}
+                />
+                <div className="tf-container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="box scrolling-effect effectFade">
                         <div className="heading-section mb_32">
                             <span className="sub text-uppercase fw-6 text_secondary-color-2">

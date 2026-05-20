@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { calculate, RVSFormData } from "@/lib/rvs-calculate";
 import { Suspense } from "react";
+import GooglePlacesAutocomplete from "@/components/common/GooglePlacesAutocomplete";
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface FormState {
@@ -193,6 +194,20 @@ function QuizInner() {
       delete next[key as string];
       return next;
     });
+  }
+
+  // Handle Google Places selection
+  function handlePlaceSelected(place: google.maps.places.PlaceResult) {
+    if (place.formatted_address) {
+      setField("address", place.formatted_address);
+      
+      // Clear address error if it exists
+      setErrors((e) => {
+        const next = { ...e };
+        delete next.address;
+        return next;
+      });
+    }
   }
 
   function goNext() {
@@ -487,13 +502,13 @@ function QuizInner() {
                 We&apos;ll look up your property details and local market data automatically.
               </p>
               <label style={labelStyle} htmlFor="address">Property Address</label>
-              <input
-                id="address"
-                type="text"
+              <GooglePlacesAutocomplete
                 value={form.address}
-                onChange={(e) => setField("address", e.target.value)}
+                onChange={(address) => setField("address", address)}
+                onPlaceSelected={handlePlaceSelected}
                 placeholder="123 Oak Street, Thousand Oaks, CA 91360"
                 style={{ ...inputStyle, ...(errors.address ? { borderColor: "#dc2626" } : {}) }}
+                error={!!errors.address}
                 autoFocus
                 onKeyDown={(e) => e.key === "Enter" && validateStep() && goNext()}
               />

@@ -17,7 +17,7 @@ export default function Header() {
                             <div className="header-inner">
                                 <Link href="/" className="site-logo">
                                     <Image
-                                        src="/assets/images/logo/black-inline-logo.png"
+                                        src="/assets/images/logo/mathias-logo.jpg"
                                         alt="logo"
                                         className="main-logo"
                                         width={222}

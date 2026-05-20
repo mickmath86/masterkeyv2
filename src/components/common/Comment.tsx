@@ -72,7 +72,7 @@ export default function Comment() {
                         <div className="info mb_12">
                             <h6 className="name text_primary-color mb_4">
                                 <Link href="#" className="link">
-                                    Jorge R.
+                                    Mark Mathias
                                 </Link>
                             </h6>
                             <p className="text-body-default">

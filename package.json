@@ -11,6 +11,7 @@
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.105.1",
     "bootstrap": "^5.3.7",
     "framer-motion": "^12.23.12",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/bootstrap": "^5.2.10",
+    "@types/google.maps": "^3.64.0",
     "@types/isotope-layout": "^3.0.15",
     "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",

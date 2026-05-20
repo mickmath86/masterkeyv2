@@ -17,7 +17,7 @@ export default function BoxSeller3() {
                             />
                         </div>
                         <div className="author-info d-flex flex-column">
-                            <h6 className="mb_8">Jorge R.</h6>
+                            <h6 className="mb_8">Mark Mathias</h6>
                             <span className="text-body-default">
                                 1-555-678-8888
                             </span>

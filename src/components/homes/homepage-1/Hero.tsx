@@ -84,7 +84,7 @@ export default function Hero() {
             <div className="tf-container w-1830">
                 <div className="content">
                     {/* Social proof — above the fold */}
-                    <AvatarGroup />
+                    {/* <AvatarGroup /> */}
 
                     <h1 className="title split-text effect-blur-fade">
                         Discover Your <br /> Perfect Living Spot

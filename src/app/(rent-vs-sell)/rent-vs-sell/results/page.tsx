@@ -3,6 +3,8 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Header from "@/components/header/Header";
+import Footer1 from "@/components/footer/Footer1";
 import {
   BarChart,
   Bar,
@@ -133,31 +135,22 @@ function ResultsInner() {
 
   if (status === "loading") {
     return (
-      <div
-        style={{
-          minHeight: "80vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#6b7280",
-          gap: 16,
-        }}
-      >
-        <div className="spinner-border" style={{ width: 40, height: 40, borderColor: "#2563eb", borderRightColor: "transparent" }} role="status" />
-        <p style={{ fontWeight: 500, fontSize: 16 }}>Loading your report…</p>
+      <div className="bg-light-color" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <div style={{ width: 40, height: 40, border: "3px solid var(--Line)", borderTopColor: "var(--Primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        <p className="text-body-2 text_secondary-color fw-5">Loading your report…</p>
       </div>
     );
   }
 
   if (status === "expired") {
     return (
-      <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", marginBottom: 8 }}>Report Expired</h1>
-        <p style={{ color: "#6b7280", marginBottom: 24 }}>This analysis expired after 30 days. Run a fresh one — it only takes 2 minutes.</p>
-        <Link href="/rent-vs-sell/quiz" style={{ background: "#2563eb", color: "#fff", borderRadius: 10, padding: "14px 28px", textDecoration: "none", fontWeight: 700 }}>
-          Run a New Analysis →
+      <div className="bg-light-color text-center" style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div className="mb_16" style={{ fontSize: 48 }}>⏰</div>
+        <h2 className="text_primary-color mb_8">Report Expired</h2>
+        <p className="text-body-2 text_secondary-color mb_24" style={{ maxWidth: 400 }}>This analysis expired after 30 days. Run a fresh one — it only takes 2 minutes.</p>
+        <Link href="/rent-vs-sell/quiz" className="tf-btn btn-bg-1 btn-px-32">
+          <span>Run a New Analysis</span>
+          <span className="bg-effect"></span>
         </Link>
       </div>
     );
@@ -165,11 +158,11 @@ function ResultsInner() {
 
   if (status === "not_found" || !report) {
     return (
-      <div style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: "#111827", marginBottom: 8 }}>Analysis Not Found</h1>
-        <p style={{ color: "#6b7280", marginBottom: 24 }}>We couldn&apos;t find this analysis. It may have expired or the link may be incorrect.</p>
-        <Link href="/rent-vs-sell" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "underline" }}>← Back to Rent vs. Sell</Link>
+      <div className="bg-light-color text-center" style={{ minHeight: "80vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div className="mb_16" style={{ fontSize: 48 }}>🔍</div>
+        <h2 className="text_primary-color mb_8">Analysis Not Found</h2>
+        <p className="text-body-2 text_secondary-color mb_24" style={{ maxWidth: 400 }}>We couldn&apos;t find this analysis. It may have expired or the link may be incorrect.</p>
+        <Link href="/rent-vs-sell" className="link text_primary-color fw-6">← Back to Rent vs. Sell</Link>
       </div>
     );
   }
@@ -203,46 +196,47 @@ function ResultsInner() {
   ];
 
   return (
-    <div style={{ background: "#f9fafb", minHeight: "100vh", paddingBottom: 80 }}>
-      {/* Top bar */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Link href="/rent-vs-sell" style={{ fontSize: 14, color: "#6b7280", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
-          ← Back
-        </Link>
-        <button
-          onClick={() => window.print()}
-          style={{ background: "none", border: "1.5px solid #d1d5db", borderRadius: 8, padding: "7px 16px", fontSize: 13, cursor: "pointer", color: "#374151", fontWeight: 600 }}
-        >
-          Print / Save PDF
-        </button>
-      </div>
+    <>
+      <Header />
+      <div className="bg-light-color" style={{ minHeight: "100vh", paddingBottom: 80 }}>
+        {/* Top bar */}
+        <div className="bg-white-color" style={{ borderBottom: "1px solid var(--Line)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/rent-vs-sell" className="text-caption-1 text_secondary-color fw-5 link" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            ← Back
+          </Link>
+          <button
+            onClick={() => window.print()}
+            className="tf-btn btn-border btn-px-24"
+            style={{ padding: "7px 16px", fontSize: 13 }}
+          >
+            <span>Print / Save PDF</span>
+          </button>
+        </div>
 
-      <div className="tf-container" style={{ maxWidth: 760, paddingTop: 40 }}>
+        <div className="tf-container" style={{ maxWidth: 760, paddingTop: 40 }}>
 
         {/* Property address */}
         {form.address && (
-          <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 8, fontWeight: 500 }}>
+          <p className="text-caption-1 text_secondary-color fw-5 mb_8">
             📍 {form.address}
           </p>
         )}
 
         {/* Verdict banner */}
         <div
+          className="rounded-16 mb_32 text_white"
           style={{
             background: verdictColor(overallVerdict),
-            borderRadius: 14,
             padding: "24px 28px",
-            marginBottom: 32,
-            color: "#fff",
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.85, marginBottom: 6 }}>
+          <div className="text-caption-2 fw-6 text-uppercase mb_6" style={{ letterSpacing: "0.1em", opacity: 0.85 }}>
             10-Year Verdict
           </div>
-          <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 800, marginBottom: 8 }}>
+          <h2 className="fw-7 mb_8">
             {verdictLabel(overallVerdict)}
-          </h1>
-          <p style={{ opacity: 0.9, fontSize: 15, margin: 0 }}>
+          </h2>
+          <p className="text-body-2" style={{ opacity: 0.9, margin: 0 }}>
             {overallVerdict === "sell" && `Selling and investing the proceeds builds ${fmt(diff10yr)} more wealth over 10 years.`}
             {overallVerdict === "rent" && `Renting builds ${fmt(Math.abs(diff10yr))} more wealth over 10 years vs. selling.`}
             {overallVerdict === "close" && "Both paths produce similar long-term wealth. Your decision may come down to personal factors."}
@@ -410,14 +404,16 @@ function ResultsInner() {
           </a>
         </div>
       </div>
-    </div>
+      </div>
+      <Footer1 />
+    </>
   );
 }
 
 // ── Page export ────────────────────────────────────────────────────────
 export default function ResultsPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
+    <Suspense fallback={<div className="bg-light-color" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
       <ResultsInner />
     </Suspense>
   );

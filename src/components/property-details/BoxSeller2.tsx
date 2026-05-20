@@ -15,10 +15,10 @@ export default function BoxSeller2() {
                     />
                 </div>
                 <div className="author-info d-flex flex-column">
-                    <h6 className="mb_4">Jorge R.</h6>
+                    <h6 className="mb_4">Mark Mathias</h6>
                     <p className="mb_8">Senior Property Manager</p>
                     <p>
-                        Jorge R. is an experienced agent known for friendly
+                        Mark Mathias is an experienced agent known for friendly
                         service, local expertise, reliable property guidance
                         across and nearby areas.
                     </p>

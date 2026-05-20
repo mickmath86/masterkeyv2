@@ -1,83 +1,36 @@
 import Image from "next/image";
 import React from "react";
 
-// ── City data — top-priced active residential listing per city, confirmed image ──
-// Images are served from cdn.repliers.io and already allowlisted in next.config.ts
-
-const CDN = "https://cdn.repliers.io";
+// ── City data — static images from public folder ──
 
 const CITIES = [
     {
         city: "Thousand Oaks",
-        mls: "226001520",
-        price: 34900000,
         count: 87,
-        img: `${CDN}/crmls/IMG-226001520_1.jpg?class=large`,
-    },
-    {
-        city: "Camarillo",
-        mls: "25553301",
-        price: 7395000,
-        count: 206,
-        img: `${CDN}/crmls/IMG-25553301_1.jpg?class=large`,
-    },
-    {
-        city: "Westlake Village",
-        mls: "26635229",
-        price: 14995000,
-        count: 9,
-        img: `${CDN}/crmls/IMG-26635229_1.jpg?class=large`,
+        img: "/assets/images/home/Thousand-Oaks.png",
     },
     {
         city: "Ventura",
-        mls: "V1-29710",
-        price: 7900000,
         count: 211,
-        img: `${CDN}/crmls/IMG-V1-29710_1.jpg?class=large`,
+        img: "/assets/images/home/Ventura.png",
+    },
+    {
+        city: "Westlake Village",
+        count: 9,
+        img: "/assets/images/home/Westlake.png",
     },
     {
         city: "Oxnard",
-        mls: "V1-33422",
-        price: 6995000,
-        count: 209,
-        img: `${CDN}/crmls/IMG-V1-33422_1.jpg?class=large`,
-    },
-    {
-        city: "Newbury Park",
-        mls: "226001943",
-        price: 3875000,
-        count: 93,
-        img: `${CDN}/crmls/IMG-226001943_1.jpg?class=large`,
-    },
-    {
-        city: "Simi Valley",
-        mls: "V1-29390",
-        price: 4799000,
-        count: 149,
-        img: `${CDN}/crmls/IMG-V1-29390_1.jpg?class=large`,
-    },
-    {
-        city: "Moorpark",
-        mls: "V1-35585",
-        price: 12750000,
-        count: 33,
-        img: `${CDN}/crmls/IMG-V1-35585_1.jpg?class=large`,
-    },
-    {
-        city: "Agoura Hills",
-        mls: "25615621",
-        price: 7950000,
-        count: 55,
-        img: `${CDN}/crmls/IMG-25615621_1.jpg?class=large`,
+        count: 9,
+        img: "/assets/images/home/Oxnard.png",
     },
     {
         city: "Calabasas",
-        mls: "26653489",
-        price: 16799000,
-        count: 79,
-        img: `${CDN}/crmls/IMG-26653489_1.jpg?class=large`,
+        count: 9,
+        img: "/assets/images/home/Calabasas.png",
     },
 ];
+
 
 // ── Card ──────────────────────────────────────────────────────────────────
 
@@ -87,12 +40,14 @@ function CityCard({
     count,
     wide = false,
     delay = "0.2",
+    idx = 0,
 }: {
     city: string;
     img: string;
     count: number;
     wide?: boolean;
     delay?: string;
+    idx?: number;
 }) {
     const href = `/listing-half-map-grid?city=${encodeURIComponent(city)}`;
 
@@ -100,17 +55,24 @@ function CityCard({
         <div
             className="location-item hover-image scrolling-effect effectFade"
             data-delay={delay}
-            style={wide ? undefined : { flex: "1 1 0", minWidth: 0 }}
         >
-            <a href={href} className="img-style mb_18">
-                <div style={{ position: "relative", width: "100%", height: 300, borderRadius: 12, overflow: "hidden" }}>
+            <a href={href} className="img-style mb_18" style={{ display: "block" }}>
+                <div style={{ 
+                    position: "relative", 
+                    width: "100%", 
+                    height: 300,
+                    minHeight: 300,
+                    borderRadius: 12, 
+                    overflow: "hidden",
+                    backgroundColor: "#f3f4f6"
+                }}>
                     <Image
                         src={img}
                         alt={`${city}, CA homes for sale`}
                         fill
-                        unoptimized
-                        sizes={wide ? "630px" : "300px"}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         style={{ objectFit: "cover", objectPosition: "center" }}
+                        priority={idx === 0}
                     />
                 </div>
             </a>
@@ -127,8 +89,6 @@ function CityCard({
 // ── Main ──────────────────────────────────────────────────────────────────
 
 export default function Location() {
-    const [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9] = CITIES;
-
     return (
         <div className="section-location tf-spacing-1">
             <div className="tf-container">
@@ -142,40 +102,15 @@ export default function Location() {
                 </div>
 
                 <div className="wrap-location">
-                    {/* Row 1: [small, small] | [wide] */}
-                    <div className="tf-grid-layout lg-col-2">
-                        <div className="d-flex gap_30">
-                            <CityCard {...c0} delay="0.2" />
-                            <CityCard {...c1} delay="0.3" />
-                        </div>
-                        <CityCard {...c2} wide delay="0.4" />
-                    </div>
-
-                    {/* Row 2: [wide] | [small, small] */}
-                    <div className="tf-grid-layout lg-col-2">
-                        <CityCard {...c3} wide delay="0.4" />
-                        <div className="d-flex gap_30">
-                            <CityCard {...c4} delay="0.3" />
-                            <CityCard {...c5} delay="0.2" />
-                        </div>
-                    </div>
-
-                    {/* Row 3: [small, small] | [wide] */}
-                    <div className="tf-grid-layout lg-col-2">
-                        <div className="d-flex gap_30">
-                            <CityCard {...c6} delay="0.2" />
-                            <CityCard {...c7} delay="0.3" />
-                        </div>
-                        <CityCard {...c8} wide delay="0.4" />
-                    </div>
-
-                    {/* Row 4: [wide] | spacer */}
-                    <div className="tf-grid-layout lg-col-2">
-                        <CityCard {...c9} wide delay="0.4" />
-                        <div className="d-flex gap_30" style={{ visibility: "hidden", pointerEvents: "none" }}>
-                            <div style={{ flex: "1 1 0" }} />
-                            <div style={{ flex: "1 1 0" }} />
-                        </div>
+                    <div className="tf-grid-layout lg-col-3 md-col-2">
+                        {CITIES.map((city, index) => (
+                            <CityCard
+                                key={city.city}
+                                {...city}
+                                idx={index}
+                                delay={`${0.2 + index * 0.1}`}
+                            />
+                        ))}
                     </div>
                 </div>
             </div>
