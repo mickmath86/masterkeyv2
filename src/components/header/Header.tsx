@@ -19,7 +19,7 @@ export default function Header() {
                                     <Image
                                         src="/assets/images/logo/mathias-logo.jpg"
                                         alt="logo"
-                                        className="main-logo"
+                                        className="main-logo hidden md:block"
                                         width={222}
                                         height={48}
                                     />
